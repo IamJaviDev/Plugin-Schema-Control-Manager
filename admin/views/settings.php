@@ -15,6 +15,16 @@
                 <tr><th>Enable graph diagnostics</th><td><label><input type="checkbox" name="enable_graph_diagnostics" value="1" <?php checked( ! empty( $settings['enable_graph_diagnostics'] ) ); ?>> Enabled</label></td></tr>
                 <tr><th>Debug mode</th><td><label><input type="checkbox" name="debug_mode" value="1" <?php checked( ! empty( $settings['debug_mode'] ) ); ?>> Enabled</label></td></tr>
                 <tr><th><label for="conflict_types_default">Conflict types</label></th><td><input class="large-text" type="text" id="conflict_types_default" name="conflict_types_default" value="<?php echo esc_attr( implode( ', ', (array) ( $settings['conflict_types_default'] ?? array() ) ) ); ?>"><p class="description">Comma separated list used in the rule editor.</p></td></tr>
+                <tr>
+                    <th><label for="preview_language">Preview language</label></th>
+                    <td>
+                        <select name="preview_language" id="preview_language">
+                            <option value="en" <?php selected( ( $settings['preview_language'] ?? 'en' ), 'en' ); ?>>English</option>
+                            <option value="es" <?php selected( ( $settings['preview_language'] ?? 'en' ), 'es' ); ?>>Español</option>
+                        </select>
+                        <p class="description">Language for the Final Graph Preview panel labels in the rule editor.</p>
+                    </td>
+                </tr>
             </table>
             <p><button class="button button-primary" name="scm_save_settings" value="1">Save Settings</button></p>
         </form>

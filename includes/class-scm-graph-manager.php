@@ -184,6 +184,101 @@ class SCM_Graph_Manager {
         return $analysis;
     }
 
+    /**
+     * Build a preview payload for the Final Graph Preview admin panel.
+     *
+     * Aggregates custom nodes, diagnostics, and rule-level change descriptions
+     * without touching merge logic, AIOSEO data, or frontend rendering.
+     *
+     * @param int        $rule_id
+     * @param array|null $rule
+     * @return array{
+     *   status: string,
+     *   counts: array,
+     *   errors: string[],
+     *   structural_warnings: string[],
+     *   semantic_warnings: string[],
+     *   changes: string[],
+     *   final_graph: array
+     * }
+     */
+    public function get_preview_payload_for_rule( $rule_id, $rule = null ) {
+        $nodes   = $this->get_custom_nodes_for_rule( $rule_id, $rule );
+        $notices = $this->get_last_merge_notices();
+        $context = $this->build_context( $rule, get_option( 'scm_settings', array() ) );
+
+        $analysis = $this->diagnostics->analyze( $nodes, $context );
+
+        // Merge normalization/process errors and warnings into the analysis.
+        if ( ! empty( $notices['errors'] ) ) {
+            $analysis['errors'] = array_values( array_unique(
+                array_merge( $analysis['errors'], $notices['errors'] )
+            ) );
+        }
+        if ( ! empty( $notices['warnings'] ) ) {
+            $analysis['structural_warnings'] = array_values( array_unique(
+                array_merge( $analysis['structural_warnings'], $notices['warnings'] )
+            ) );
+        }
+
+        // Overall status.
+        if ( ! empty( $analysis['errors'] ) ) {
+            $status = 'errors';
+        } elseif ( ! empty( $analysis['structural_warnings'] ) || ! empty( $analysis['semantic_warnings'] ) ) {
+            $status = 'warnings';
+        } else {
+            $status = 'valid';
+        }
+
+        // Counts – AIOSEO nodes and rewritten refs are not available in the admin
+        // context (no real AIOSEO graph is present); they are runtime-only values.
+        $mode          = $rule['mode'] ?? 'aioseo_only';
+        $replaced      = array_values( array_filter( (array) ( $rule['replaced_types'] ?? array() ) ) );
+        $removed_count = ( 'custom_override_selected' === $mode ) ? count( $replaced ) : 0;
+
+        // High-level change descriptions based on rule configuration.
+        $changes = array();
+        switch ( $mode ) {
+            case 'aioseo_only':
+                $changes[] = __( 'Mode: AIOSEO Only — custom schemas are not active for this rule.', 'schema-control-manager' );
+                break;
+            case 'aioseo_plus_custom':
+                $changes[] = __( 'Mode: AIOSEO + Custom — custom nodes will be merged with AIOSEO output.', 'schema-control-manager' );
+                break;
+            case 'custom_override_selected':
+                $changes[] = __( 'Mode: Override Selected — selected AIOSEO types will be removed and replaced by custom nodes.', 'schema-control-manager' );
+                if ( ! empty( $replaced ) ) {
+                    $changes[] = sprintf(
+                        /* translators: %s: comma-separated list of schema types */
+                        __( 'Types to be replaced: %s', 'schema-control-manager' ),
+                        implode( ', ', $replaced )
+                    );
+                }
+                break;
+            case 'custom_only':
+                $changes[] = __( 'Mode: Custom Only — AIOSEO output is disabled; only custom schemas will be injected.', 'schema-control-manager' );
+                break;
+        }
+
+        return array(
+            'status'              => $status,
+            'counts'              => array(
+                'aioseo_nodes'        => null, // runtime-only
+                'removed_nodes'       => $removed_count,
+                'added_nodes'         => count( $nodes ),
+                'rewritten_refs'      => null, // runtime-only
+                'errors'              => count( $analysis['errors'] ),
+                'structural_warnings' => count( $analysis['structural_warnings'] ),
+                'semantic_warnings'   => count( $analysis['semantic_warnings'] ),
+            ),
+            'errors'              => $analysis['errors'],
+            'structural_warnings' => $analysis['structural_warnings'],
+            'semantic_warnings'   => $analysis['semantic_warnings'],
+            'changes'             => $changes,
+            'final_graph'         => $nodes,
+        );
+    }
+
     public function get_diagnostics_for_json( $schema_json, $rule = null ) {
         $settings   = get_option( 'scm_settings', array() );
         $normalized = $this->normalizer->normalize_schema_json( $schema_json, ! empty( $settings['strip_empty_values'] ) );

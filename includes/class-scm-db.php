@@ -55,15 +55,16 @@ class SCM_DB {
 
     public function maybe_add_default_options() {
         $defaults = array(
-            'aioseo_integration_enabled' => 1,
-            'debug_mode'                 => 0,
-            'pretty_print_json'          => 1,
-            'strip_empty_values'         => 1,
-            'conflict_types_default'     => array( 'BreadcrumbList', 'FAQPage', 'HowTo', 'Person', 'Article', 'WebPage', 'WebSite', 'ProfilePage', 'CollectionPage', 'Product', 'Service', 'LocalBusiness', 'Organization', 'VideoObject' ),
-            'auto_add_context'           => 1,
-            'auto_wrap_graph'            => 1,
+            'aioseo_integration_enabled'    => 1,
+            'debug_mode'                    => 0,
+            'pretty_print_json'             => 1,
+            'strip_empty_values'            => 1,
+            'conflict_types_default'        => array( 'BreadcrumbList', 'FAQPage', 'HowTo', 'Person', 'Article', 'WebPage', 'WebSite', 'ProfilePage', 'CollectionPage', 'Product', 'Service', 'LocalBusiness', 'Organization', 'VideoObject' ),
+            'auto_add_context'              => 1,
+            'auto_wrap_graph'               => 1,
             'warn_on_structural_without_id' => 1,
-            'enable_graph_diagnostics'   => 1,
+            'enable_graph_diagnostics'      => 1,
+            'preview_language'              => 'en',
         );
 
         if ( false === get_option( 'scm_settings', false ) ) {

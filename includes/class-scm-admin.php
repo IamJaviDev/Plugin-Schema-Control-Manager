@@ -154,6 +154,7 @@ class SCM_Admin {
                 'warn_on_structural_without_id' => ! empty( $_POST['warn_on_structural_without_id'] ) ? 1 : 0,
                 'enable_graph_diagnostics'      => ! empty( $_POST['enable_graph_diagnostics'] ) ? 1 : 0,
                 'conflict_types_default'        => array_values( array_filter( array_map( 'trim', explode( ',', wp_unslash( $_POST['conflict_types_default'] ?? '' ) ) ) ) ),
+                'preview_language'              => in_array( wp_unslash( $_POST['preview_language'] ?? '' ), array( 'en', 'es' ), true ) ? wp_unslash( $_POST['preview_language'] ) : 'en',
             );
             update_option( 'scm_settings', $settings );
             wp_safe_redirect( admin_url( 'admin.php?page=scm_settings&updated=1' ) );
@@ -268,6 +269,12 @@ class SCM_Admin {
                 $runtime_notices = $stored;
                 delete_transient( 'scm_runtime_notices_rule_' . $rule_id );
             }
+        }
+
+        // ── Final Graph Preview payload ─────────────────────────────────────
+        $preview_payload = null;
+        if ( $rule_id ) {
+            $preview_payload = $this->graph_manager->get_preview_payload_for_rule( $rule_id, $rule );
         }
 
         include SCM_PLUGIN_DIR . 'admin/views/rule-edit.php';

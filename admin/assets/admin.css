@@ -12,6 +12,45 @@
 .scm-severity-structural{color:#7a5200}
 .scm-severity-semantic{color:#0a4b78}
 
+/* ── Final Graph Preview panel ──────────────────────────────────────────── */
+.scm-preview-panel{margin-top:20px}
+
+.scm-preview-header{margin-bottom:10px}
+.scm-preview-header h2{margin:0 0 4px}
+.scm-preview-subtitle{margin:0;color:#646970;font-size:13px}
+
+.scm-preview-meta{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.scm-preview-stats{font-size:13px;color:#3c434a}
+.scm-stat-error{color:#b32d2e}
+.scm-stat-warn{color:#7a5200}
+
+.scm-status-badge{display:inline-flex;align-items:center;padding:4px 12px;border-radius:20px;font-size:13px;font-weight:600}
+.scm-status-valid{background:#edfaee;color:#008a20;border:1px solid #a3d9a5}
+.scm-status-warnings{background:#fff8e1;color:#7a5200;border:1px solid #f0c040}
+.scm-status-errors{background:#fdf2f2;color:#b32d2e;border:1px solid #e8b4b4}
+
+.scm-collapsible{margin-bottom:8px;border:1px solid #dcdcde;border-radius:6px;overflow:hidden}
+.scm-collapsible-trigger{display:flex;justify-content:space-between;align-items:center;width:100%;padding:9px 14px;background:#f6f7f7;border:none;cursor:pointer;font-size:13px;text-align:left;gap:8px}
+.scm-collapsible-trigger:hover{background:#ededed}
+.scm-caret{font-size:10px;transition:transform .18s;flex-shrink:0}
+.scm-collapsible-trigger[aria-expanded="true"] .scm-caret{transform:rotate(90deg)}
+.scm-collapsible-body{padding:12px 14px;display:none}
+.scm-collapsible-body.open{display:block}
+.scm-collapsible-body ul{margin:0;padding-left:18px}
+.scm-collapsible-body li{margin-bottom:4px}
+
+.scm-preview-changes{margin:16px 0}
+.scm-preview-changes-title{font-weight:600;margin:0 0 8px;font-size:13px}
+.scm-preview-changes ul{margin:0;padding-left:18px}
+.scm-preview-changes li{margin-bottom:4px;color:#3c434a}
+.scm-no-changes{color:#646970;font-style:italic;margin:0}
+
+.scm-preview-json{margin-top:16px}
+.scm-preview-json-toolbar{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+.scm-preview-json-title{font-weight:600;font-size:13px;margin-right:auto}
+.scm-json-viewer{background:#1d2327;color:#d4d4d4;border-radius:6px;padding:16px;max-height:380px;overflow:auto;font-family:Consolas,Monaco,"Courier New",monospace;font-size:12px;line-height:1.6;white-space:pre;margin:0}
+.scm-json-viewer.expanded{max-height:none}
+
 /* Runtime error notice (from last frontend render) */
 .scm-notice-runtime{background:#fff3cd;border-left-color:#f0b429;padding:10px 14px}
 .scm-notice-runtime p{margin:.4em 0}

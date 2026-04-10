@@ -122,3 +122,46 @@ document.addEventListener('DOMContentLoaded', function () {
   }
   document.querySelectorAll('input[name="replaced_types[]"]').forEach((checkbox) => checkbox.addEventListener('change', updateModeUi));
 });
+
+// ── Final Graph Preview ────────────────────────────────────────────────────
+(function scmPreviewInit() {
+  var panel = document.getElementById('scm-final-preview');
+  if (!panel) return;
+
+  // Collapsible sections
+  panel.querySelectorAll('.scm-collapsible-trigger').forEach(function (trigger) {
+    trigger.addEventListener('click', function () {
+      var expanded = this.getAttribute('aria-expanded') === 'true';
+      this.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+      var body = this.nextElementSibling;
+      if (body) body.classList.toggle('open', !expanded);
+    });
+  });
+
+  // Copy JSON button
+  var copyBtn = document.getElementById('scm-copy-json');
+  var jsonViewer = document.getElementById('scm-json-viewer');
+  if (copyBtn && jsonViewer && navigator.clipboard) {
+    var labelCopy = copyBtn.textContent.trim();
+    var labelCopied = copyBtn.getAttribute('data-scm-copied') || labelCopy;
+    copyBtn.addEventListener('click', function () {
+      navigator.clipboard.writeText(jsonViewer.textContent).then(function () {
+        copyBtn.textContent = labelCopied;
+        setTimeout(function () {
+          copyBtn.textContent = labelCopy;
+        }, 1500);
+      });
+    });
+  }
+
+  // Expand / Collapse JSON viewer
+  var expandBtn = document.getElementById('scm-expand-json');
+  if (expandBtn && jsonViewer) {
+    var labelExpand = expandBtn.textContent.trim();
+    var labelCollapse = expandBtn.getAttribute('data-scm-collapse') || labelExpand;
+    expandBtn.addEventListener('click', function () {
+      var isExpanded = jsonViewer.classList.toggle('expanded');
+      expandBtn.textContent = isExpanded ? labelCollapse : labelExpand;
+    });
+  }
+})();

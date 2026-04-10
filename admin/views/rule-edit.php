@@ -172,6 +172,169 @@
         <?php endif; ?>
     </div>
 
+    <?php // ── Final Graph Preview panel ──────────────────────────────────── ?>
+    <?php if ( $rule['id'] && ! empty( $preview_payload ) ) : ?>
+    <?php
+        $p_status     = $preview_payload['status'] ?? 'valid';
+        $p_counts     = $preview_payload['counts'] ?? array();
+        $p_errors     = $preview_payload['errors'] ?? array();
+        $p_structural = $preview_payload['structural_warnings'] ?? array();
+        $p_semantic   = $preview_payload['semantic_warnings'] ?? array();
+        $p_changes    = $preview_payload['changes'] ?? array();
+        $p_graph      = $preview_payload['final_graph'] ?? array();
+        $p_json       = wp_json_encode(
+            array( '@context' => 'https://schema.org', '@graph' => $p_graph ),
+            JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
+        );
+        $p_warning_count = count( $p_structural ) + count( $p_semantic );
+        $preview_lang    = $settings['preview_language'] ?? 'en';
+        $pt = array(
+            'en' => array(
+                'panel_title'  => 'Final Graph Preview',
+                'panel_sub'    => 'Effective schema before frontend render',
+                'status_valid' => 'Valid',
+                'status_warn'  => 'Warnings',
+                'status_err'   => 'Errors',
+                'custom_nodes' => 'Custom nodes',
+                'warnings'     => 'Warnings',
+                'errors_label' => 'Errors',
+                'crit_errors'  => 'Critical Errors',
+                'str_warn'     => 'Structural Warnings',
+                'sem_warn'     => 'Semantic Warnings',
+                'changes'      => 'Changes applied',
+                'no_changes'   => 'No graph changes detected',
+                'final_graph'  => 'Final Graph (custom nodes)',
+                'copy_json'    => 'Copy JSON',
+                'copied'       => 'Copied!',
+                'expand'       => 'Expand',
+                'collapse'     => 'Collapse',
+            ),
+            'es' => array(
+                'panel_title'  => 'Vista previa del grafo final',
+                'panel_sub'    => 'Grafo efectivo antes del render en frontend',
+                'status_valid' => 'Válido',
+                'status_warn'  => 'Advertencias',
+                'status_err'   => 'Errores',
+                'custom_nodes' => 'Nodos personalizados',
+                'warnings'     => 'Advertencias',
+                'errors_label' => 'Errores',
+                'crit_errors'  => 'Errores críticos',
+                'str_warn'     => 'Advertencias estructurales',
+                'sem_warn'     => 'Advertencias semánticas',
+                'changes'      => 'Cambios aplicados',
+                'no_changes'   => 'Sin cambios detectados',
+                'final_graph'  => 'Grafo final (nodos personalizados)',
+                'copy_json'    => 'Copiar JSON',
+                'copied'       => '¡Copiado!',
+                'expand'       => 'Expandir',
+                'collapse'     => 'Contraer',
+            ),
+        );
+        $t = $pt[ isset( $pt[ $preview_lang ] ) ? $preview_lang : 'en' ];
+    ?>
+    <div class="scm-card scm-card-full scm-preview-panel" id="scm-final-preview">
+
+        <div class="scm-preview-header">
+            <h2><?php echo esc_html( $t['panel_title'] ); ?></h2>
+            <p class="scm-preview-subtitle"><?php echo esc_html( $t['panel_sub'] ); ?></p>
+        </div>
+
+        <div class="scm-preview-meta">
+            <span class="scm-status-badge scm-status-<?php echo esc_attr( $p_status ); ?>">
+                <?php
+                if ( 'errors' === $p_status ) {
+                    echo esc_html( $t['status_err'] );
+                } elseif ( 'warnings' === $p_status ) {
+                    echo esc_html( $t['status_warn'] );
+                } else {
+                    echo esc_html( $t['status_valid'] );
+                }
+                ?>
+            </span>
+            <span class="scm-preview-stats">
+                <?php echo esc_html( $t['custom_nodes'] ); ?>: <strong><?php echo esc_html( $p_counts['added_nodes'] ?? 0 ); ?></strong>
+                <?php if ( ( $p_counts['errors'] ?? 0 ) > 0 ) : ?>
+                    &nbsp;&middot;&nbsp; <?php echo esc_html( $t['errors_label'] ); ?>: <strong class="scm-stat-error"><?php echo esc_html( $p_counts['errors'] ?? 0 ); ?></strong>
+                <?php endif; ?>
+                <?php if ( $p_warning_count > 0 ) : ?>
+                    &nbsp;&middot;&nbsp; <?php echo esc_html( $t['warnings'] ); ?>: <strong class="scm-stat-warn"><?php echo esc_html( $p_warning_count ); ?></strong>
+                <?php endif; ?>
+            </span>
+        </div>
+
+        <?php if ( ! empty( $p_errors ) ) : ?>
+        <div class="scm-collapsible">
+            <button type="button" class="scm-collapsible-trigger" aria-expanded="true">
+                <span class="scm-severity-critical"><?php echo esc_html( $t['crit_errors'] ); ?></span>
+                <span class="scm-caret" aria-hidden="true">&#9658;</span>
+            </button>
+            <div class="scm-collapsible-body open">
+                <ul class="scm-error-list">
+                    <?php foreach ( $p_errors as $err ) : ?>
+                        <li><?php echo esc_html( $err ); ?></li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <?php if ( ! empty( $p_structural ) ) : ?>
+        <div class="scm-collapsible">
+            <button type="button" class="scm-collapsible-trigger" aria-expanded="false">
+                <span class="scm-severity-structural"><?php echo esc_html( $t['str_warn'] ); ?></span>
+                <span class="scm-caret" aria-hidden="true">&#9658;</span>
+            </button>
+            <div class="scm-collapsible-body">
+                <ul class="scm-structural-warning-list">
+                    <?php foreach ( $p_structural as $w ) : ?>
+                        <li><?php echo esc_html( $w ); ?></li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <?php if ( ! empty( $p_semantic ) ) : ?>
+        <div class="scm-collapsible">
+            <button type="button" class="scm-collapsible-trigger" aria-expanded="false">
+                <span class="scm-severity-semantic"><?php echo esc_html( $t['sem_warn'] ); ?></span>
+                <span class="scm-caret" aria-hidden="true">&#9658;</span>
+            </button>
+            <div class="scm-collapsible-body">
+                <ul class="scm-semantic-warning-list">
+                    <?php foreach ( $p_semantic as $w ) : ?>
+                        <li><?php echo esc_html( $w ); ?></li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <div class="scm-preview-changes">
+            <p class="scm-preview-changes-title"><?php echo esc_html( $t['changes'] ); ?></p>
+            <?php if ( ! empty( $p_changes ) ) : ?>
+                <ul>
+                    <?php foreach ( $p_changes as $change ) : ?>
+                        <li><?php echo esc_html( $change ); ?></li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php else : ?>
+                <p class="scm-no-changes"><?php echo esc_html( $t['no_changes'] ); ?></p>
+            <?php endif; ?>
+        </div>
+
+        <div class="scm-preview-json">
+            <div class="scm-preview-json-toolbar">
+                <span class="scm-preview-json-title"><?php echo esc_html( $t['final_graph'] ); ?></span>
+                <button type="button" class="button button-small" id="scm-copy-json" data-scm-copied="<?php echo esc_attr( $t['copied'] ); ?>"><?php echo esc_html( $t['copy_json'] ); ?></button>
+                <button type="button" class="button button-small" id="scm-expand-json" data-scm-collapse="<?php echo esc_attr( $t['collapse'] ); ?>"><?php echo esc_html( $t['expand'] ); ?></button>
+            </div>
+            <pre class="scm-json-viewer" id="scm-json-viewer"><?php echo esc_html( false !== $p_json ? $p_json : '{}' ); ?></pre>
+        </div>
+
+    </div>
+    <?php endif; ?>
+
     <?php if ( $rule['id'] ) : ?>
     <div class="scm-card scm-card-full">
         <h2><?php echo $edit_schema['id'] ? esc_html__( 'Edit Schema', 'schema-control-manager' ) : esc_html__( 'Add Schema', 'schema-control-manager' ); ?></h2>
