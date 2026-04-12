@@ -14,6 +14,13 @@
                 <tr><th>Warn on structural node without @id</th><td><label><input type="checkbox" name="warn_on_structural_without_id" value="1" <?php checked( ! empty( $settings['warn_on_structural_without_id'] ) ); ?>> Enabled</label></td></tr>
                 <tr><th>Enable graph diagnostics</th><td><label><input type="checkbox" name="enable_graph_diagnostics" value="1" <?php checked( ! empty( $settings['enable_graph_diagnostics'] ) ); ?>> Enabled</label></td></tr>
                 <tr><th>Debug mode</th><td><label><input type="checkbox" name="debug_mode" value="1" <?php checked( ! empty( $settings['debug_mode'] ) ); ?>> Enabled</label></td></tr>
+                <tr>
+                    <th><?php esc_html_e( 'Delete data on uninstall', 'schema-control-manager' ); ?></th>
+                    <td>
+                        <label><input type="checkbox" name="delete_data_on_uninstall" value="1" <?php checked( ! empty( $settings['delete_data_on_uninstall'] ) ); ?>> <?php esc_html_e( 'Enabled', 'schema-control-manager' ); ?></label>
+                        <p class="description"><?php esc_html_e( 'When checked, all rules, schemas, and settings are permanently deleted when the plugin is uninstalled. Disabled by default to preserve data.', 'schema-control-manager' ); ?></p>
+                    </td>
+                </tr>
                 <tr><th><label for="conflict_types_default">Conflict types</label></th><td><input class="large-text" type="text" id="conflict_types_default" name="conflict_types_default" value="<?php echo esc_attr( implode( ', ', (array) ( $settings['conflict_types_default'] ?? array() ) ) ); ?>"><p class="description">Comma separated list used in the rule editor.</p></td></tr>
                 <tr>
                     <th><label for="preview_language">Preview language</label></th>

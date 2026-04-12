@@ -27,6 +27,7 @@ class SCM_DB {
             target_value VARCHAR(255) NULL,
             mode VARCHAR(50) NOT NULL DEFAULT 'aioseo_plus_custom',
             replaced_types LONGTEXT NULL,
+            priority INT NOT NULL DEFAULT 100,
             is_active TINYINT(1) NOT NULL DEFAULT 1,
             created_at DATETIME NOT NULL,
             updated_at DATETIME NOT NULL,
@@ -53,6 +54,20 @@ class SCM_DB {
         dbDelta( $schemas_sql );
     }
 
+    /**
+     * Run dbDelta to add any new columns/tables introduced since the stored DB version.
+     * Safe to call on every request because get_option() is cached and dbDelta is only
+     * triggered when the stored version is behind SCM_VERSION.
+     */
+    public function maybe_upgrade() {
+        if ( get_option( 'scm_db_version', '0' ) === SCM_VERSION ) {
+            return;
+        }
+        $this->create_tables();
+        $this->maybe_add_default_options();
+        update_option( 'scm_db_version', SCM_VERSION );
+    }
+
     public function maybe_add_default_options() {
         $defaults = array(
             'aioseo_integration_enabled'    => 1,
@@ -65,6 +80,7 @@ class SCM_DB {
             'warn_on_structural_without_id' => 1,
             'enable_graph_diagnostics'      => 1,
             'preview_language'              => 'en',
+            'delete_data_on_uninstall'      => 0,
         );
 
         if ( false === get_option( 'scm_settings', false ) ) {

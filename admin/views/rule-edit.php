@@ -118,6 +118,13 @@
                         </td>
                     </tr>
                     <tr>
+                        <th><label for="rule_priority"><?php esc_html_e( 'Priority', 'schema-control-manager' ); ?></label></th>
+                        <td>
+                            <input class="small-text" type="number" name="priority" id="rule_priority" value="<?php echo esc_attr( $rule['priority'] ?? 100 ); ?>">
+                            <p class="description"><?php esc_html_e( 'Higher number = evaluated first. Default 100.', 'schema-control-manager' ); ?></p>
+                        </td>
+                    </tr>
+                    <tr>
                         <th><?php esc_html_e( 'Status', 'schema-control-manager' ); ?></th>
                         <td><label><input type="checkbox" name="is_active" value="1" <?php checked( ! empty( $rule['is_active'] ) ); ?>> <?php esc_html_e( 'Active', 'schema-control-manager' ); ?></label></td>
                     </tr>

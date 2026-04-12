@@ -14,6 +14,13 @@ class SCM_Injector {
     }
 
     public function output_schemas() {
+        // Guard: this action must fire only once per request.
+        static $fired = false;
+        if ( $fired ) {
+            return;
+        }
+        $fired = true;
+
         $rule = $this->rules->get_matching_rule_for_request();
         if ( ! $rule || 'aioseo_only' === $rule['mode'] ) {
             return;

@@ -54,6 +54,7 @@ class SCM_Admin {
                 'target_value'   => wp_unslash( $_POST['target_value'] ?? '' ),
                 'mode'           => wp_unslash( $_POST['mode'] ?? 'aioseo_plus_custom' ),
                 'replaced_types' => isset( $_POST['replaced_types'] ) ? (array) wp_unslash( $_POST['replaced_types'] ) : array(),
+                'priority'       => isset( $_POST['priority'] ) ? (int) $_POST['priority'] : 100,
                 'is_active'      => ! empty( $_POST['is_active'] ) ? 1 : 0,
             );
 
@@ -155,6 +156,7 @@ class SCM_Admin {
                 'enable_graph_diagnostics'      => ! empty( $_POST['enable_graph_diagnostics'] ) ? 1 : 0,
                 'conflict_types_default'        => array_values( array_filter( array_map( 'trim', explode( ',', wp_unslash( $_POST['conflict_types_default'] ?? '' ) ) ) ) ),
                 'preview_language'              => in_array( wp_unslash( $_POST['preview_language'] ?? '' ), array( 'en', 'es' ), true ) ? wp_unslash( $_POST['preview_language'] ) : 'en',
+                'delete_data_on_uninstall'      => ! empty( $_POST['delete_data_on_uninstall'] ) ? 1 : 0,
             );
             update_option( 'scm_settings', $settings );
             wp_safe_redirect( admin_url( 'admin.php?page=scm_settings&updated=1' ) );
@@ -164,9 +166,12 @@ class SCM_Admin {
         if ( isset( $_GET['scm_export'] ) ) {
             $scope = sanitize_text_field( wp_unslash( $_GET['scm_export'] ) );
             if ( 'all' === $scope ) {
+                check_admin_referer( 'scm_export_all' );
                 $this->import_export->download_export_all();
             } elseif ( 'rule' === $scope && ! empty( $_GET['rule_id'] ) ) {
-                $this->import_export->download_export_rule( (int) $_GET['rule_id'] );
+                $rule_id = (int) $_GET['rule_id'];
+                check_admin_referer( 'scm_export_rule_' . $rule_id );
+                $this->import_export->download_export_rule( $rule_id );
             }
             exit;
         }

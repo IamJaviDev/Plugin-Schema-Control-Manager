@@ -32,6 +32,7 @@
                 <th><?php esc_html_e( 'Target', 'schema-control-manager' ); ?></th>
                 <th><?php esc_html_e( 'Mode', 'schema-control-manager' ); ?></th>
                 <th><?php esc_html_e( 'Replaced types', 'schema-control-manager' ); ?></th>
+                <th><?php esc_html_e( 'Priority', 'schema-control-manager' ); ?></th>
                 <th><?php esc_html_e( 'Status', 'schema-control-manager' ); ?></th>
                 <th><?php esc_html_e( 'Updated', 'schema-control-manager' ); ?></th>
                 <th><?php esc_html_e( 'Actions', 'schema-control-manager' ); ?></th>
@@ -39,7 +40,7 @@
         </thead>
         <tbody>
             <?php if ( empty( $rules ) ) : ?>
-                <tr><td colspan="7"><?php esc_html_e( 'No rules found.', 'schema-control-manager' ); ?></td></tr>
+                <tr><td colspan="8"><?php esc_html_e( 'No rules found.', 'schema-control-manager' ); ?></td></tr>
             <?php else : ?>
                 <?php foreach ( $rules as $rule ) : ?>
                     <tr>
@@ -50,6 +51,7 @@
                         </td>
                         <td><?php echo esc_html( $rule['mode'] ); ?></td>
                         <td><?php echo esc_html( implode( ', ', json_decode( $rule['replaced_types'], true ) ?: array() ) ); ?></td>
+                        <td><?php echo esc_html( $rule['priority'] ?? 100 ); ?></td>
                         <td><?php echo ! empty( $rule['is_active'] ) ? '<span class="scm-status active">Active</span>' : '<span class="scm-status inactive">Inactive</span>'; ?></td>
                         <td><?php echo esc_html( $rule['updated_at'] ); ?></td>
                         <td>

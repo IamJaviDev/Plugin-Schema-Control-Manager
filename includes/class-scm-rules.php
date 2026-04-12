@@ -33,7 +33,7 @@ class SCM_Rules {
             $binds[]  = $like;
         }
 
-        $sql .= ' ORDER BY updated_at DESC';
+        $sql .= ' ORDER BY priority DESC, updated_at DESC';
 
         return empty( $binds ) ? $wpdb->get_results( $sql, ARRAY_A ) : $wpdb->get_results( $wpdb->prepare( $sql, $binds ), ARRAY_A );
     }
@@ -56,11 +56,12 @@ class SCM_Rules {
                 'target_value'   => $normalized['target_value'],
                 'mode'           => sanitize_text_field( $normalized['mode'] ),
                 'replaced_types' => wp_json_encode( $normalized['replaced_types'] ),
+                'priority'       => isset( $data['priority'] ) ? (int) $data['priority'] : 100,
                 'is_active'      => empty( $data['is_active'] ) ? 0 : 1,
                 'created_at'     => $now,
                 'updated_at'     => $now,
             ),
-            array( '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s' )
+            array( '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%s', '%s' )
         );
 
         return (int) $wpdb->insert_id;
@@ -78,11 +79,12 @@ class SCM_Rules {
                 'target_value'   => $normalized['target_value'],
                 'mode'           => sanitize_text_field( $normalized['mode'] ),
                 'replaced_types' => wp_json_encode( $normalized['replaced_types'] ),
+                'priority'       => isset( $data['priority'] ) ? (int) $data['priority'] : 100,
                 'is_active'      => empty( $data['is_active'] ) ? 0 : 1,
                 'updated_at'     => current_time( 'mysql' ),
             ),
             array( 'id' => (int) $id ),
-            array( '%s', '%s', '%s', '%s', '%s', '%d', '%s' ),
+            array( '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%s' ),
             array( '%d' )
         );
     }
@@ -96,6 +98,32 @@ class SCM_Rules {
     public function get_matching_rule_for_request() {
         $rules = $this->get_all( array( 'is_active' => 1 ) );
 
+        // Deterministic sort: priority DESC → specificity DESC → updated_at DESC → id DESC.
+        usort(
+            $rules,
+            static function ( $a, $b ) {
+                $pa = (int) ( $a['priority'] ?? 100 );
+                $pb = (int) ( $b['priority'] ?? 100 );
+                if ( $pa !== $pb ) {
+                    return $pb - $pa;
+                }
+
+                $sa = self::target_specificity( $a['target_type'] );
+                $sb = self::target_specificity( $b['target_type'] );
+                if ( $sa !== $sb ) {
+                    return $sb - $sa;
+                }
+
+                $ua = strtotime( $a['updated_at'] );
+                $ub = strtotime( $b['updated_at'] );
+                if ( $ua !== $ub ) {
+                    return $ub - $ua;
+                }
+
+                return (int) $b['id'] - (int) $a['id'];
+            }
+        );
+
         foreach ( $rules as $rule ) {
             if ( $this->matches_current_request( $rule ) ) {
                 $rule['replaced_types'] = json_decode( $rule['replaced_types'], true ) ?: array();
@@ -104,6 +132,25 @@ class SCM_Rules {
         }
 
         return null;
+    }
+
+    /**
+     * Numeric specificity score for a target type.
+     * Higher = more specific. Extend the map when post_type / post_id are added.
+     *
+     * @param string $type
+     * @return int
+     */
+    public static function target_specificity( $type ) {
+        $map = array(
+            'home'       => 0,
+            'author'     => 10,
+            // future: 'post_type' => 15,
+            'exact_slug' => 20,
+            'exact_url'  => 30,
+            // future: 'post_id'   => 40,
+        );
+        return $map[ $type ] ?? 0;
     }
 
     public function matches_current_request( $rule ) {

@@ -49,13 +49,15 @@ class SCM_AIOSEO {
             return $graphs;
         }
 
-        $custom_nodes = $this->graph_manager->get_custom_nodes_for_rule( $rule['id'], $rule );
-
+        // custom_only output is owned exclusively by SCM_Injector via wp_head.
+        // Some AIOSEO versions fire aioseo_schema_output even after aioseo_schema_disable
+        // returns true. Returning empty here prevents schemas from being rendered a second
+        // time through the AIOSEO output path.
         if ( 'custom_only' === $rule['mode'] ) {
-            $result = empty( $custom_nodes ) ? array() : $custom_nodes;
-            $this->maybe_store_runtime_notices( $rule, $graphs, $result );
-            return $result;
+            return array();
         }
+
+        $custom_nodes = $this->graph_manager->get_custom_nodes_for_rule( $rule['id'], $rule );
 
         $result = $this->graph_manager->merge_graphs( $graphs, $custom_nodes, $rule );
         $this->maybe_store_runtime_notices( $rule, $graphs, $result );

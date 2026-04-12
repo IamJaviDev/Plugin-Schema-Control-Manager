@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Schema Control Manager
  * Description: Manage custom JSON-LD schemas by target and control coexistence with AIOSEO.
- * Version: 1.4.0
+ * Version: 1.5.0
  * Author: Don Javier
  * Text Domain: schema-control-manager
  */
@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 if ( ! defined( 'SCM_VERSION' ) ) {
-    define( 'SCM_VERSION', '1.4.0' );
+    define( 'SCM_VERSION', '1.5.0' );
 }
 
 if ( ! defined( 'SCM_PLUGIN_FILE' ) ) {
@@ -97,6 +97,7 @@ final class SCM_Plugin {
 
     private function __construct() {
         $this->db            = new SCM_DB();
+        $this->db->maybe_upgrade();
         $this->validator     = new SCM_Validator();
         $this->rules         = new SCM_Rules( $this->db );
         $this->schemas       = new SCM_Schemas( $this->db, $this->validator );
