@@ -90,4 +90,20 @@ class SCM_Schemas {
             )
         );
     }
+
+    /**
+     * Count schemas whose rule_id references a rule that no longer exists.
+     * Used for the admin integrity notice on the rules list page.
+     *
+     * @return int
+     */
+    public function get_orphan_count(): int {
+        global $wpdb;
+        return (int) $wpdb->get_var(
+            "SELECT COUNT(s.id)
+             FROM {$this->db->schemas_table()} s
+             LEFT JOIN {$this->db->rules_table()} r ON r.id = s.rule_id
+             WHERE r.id IS NULL"
+        );
+    }
 }

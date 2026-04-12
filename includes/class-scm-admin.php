@@ -4,8 +4,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 class SCM_Admin {
-    private $rules;
-    private $schemas;
+    protected $rules;
+    protected $schemas;
     private $validator;
     private $import_export;
     private $graph_manager;
@@ -81,10 +81,26 @@ class SCM_Admin {
                 'is_active'     => ! empty( $_POST['schema_is_active'] ) ? 1 : 0,
             );
 
-            $schema_id = isset( $_POST['schema_id'] ) ? (int) $_POST['schema_id'] : 0;
-            $target    = admin_url( 'admin.php?page=scm_rule_edit&rule_id=' . (int) $schema_data['rule_id'] );
-            $rule      = $this->rules->get( (int) $schema_data['rule_id'] );
-            $rule      = $rule ?: array( 'mode' => 'aioseo_plus_custom', 'target_type' => 'exact_slug', 'target_value' => '' );
+            $schema_id       = isset( $_POST['schema_id'] ) ? (int) $_POST['schema_id'] : 0;
+            $target          = admin_url( 'admin.php?page=scm_rule_edit&rule_id=' . (int) $schema_data['rule_id'] );
+            $rule_raw        = $this->rules->get( (int) $schema_data['rule_id'] );
+            $existing_schema = $schema_id > 0 ? $this->schemas->get( $schema_id ) : null;
+
+            // ── Ownership and payload validation (must run before any write) ──
+            $ownership_error = $this->validate_schema_ownership(
+                (int) $schema_data['rule_id'],
+                $schema_id,
+                $rule_raw,
+                $existing_schema,
+                $schema_data['schema_json']
+            );
+            if ( null !== $ownership_error ) {
+                wp_safe_redirect( add_query_arg( 'schema_error', rawurlencode( $ownership_error->get_error_message() ), $target ) );
+                exit;
+            }
+
+            // $rule_raw is guaranteed non-null after ownership validation passes.
+            $rule = $rule_raw;
             $rule['replaced_types'] = is_array( $rule['replaced_types'] ?? null ) ? $rule['replaced_types'] : ( json_decode( $rule['replaced_types'] ?? '[]', true ) ?: array() );
 
             $diagnostics   = $this->graph_manager->get_diagnostics_for_json( $schema_data['schema_json'], $rule );
@@ -206,6 +222,7 @@ class SCM_Admin {
                 'search'      => sanitize_text_field( $_GET['s'] ?? '' ),
             )
         );
+        $orphan_count = $this->schemas->get_orphan_count();
         include SCM_PLUGIN_DIR . 'admin/views/rules-list.php';
     }
 
@@ -224,15 +241,30 @@ class SCM_Admin {
         );
         $rule['replaced_types'] = is_array( $rule['replaced_types'] ) ? $rule['replaced_types'] : ( json_decode( $rule['replaced_types'], true ) ?: array() );
         $schemas                = $rule_id ? $this->schemas->get_by_rule( $rule_id ) : array();
-        $edit_schema            = $edit_schema_id ? $this->schemas->get( $edit_schema_id ) : array(
-            'id'            => 0,
-            'label'         => '',
-            'schema_type'   => 'Custom',
-            'schema_source' => 'manual_json',
-            'schema_json'   => "{\n  \"@type\": \"Thing\"\n}",
-            'priority'      => 10,
-            'is_active'     => 1,
-        );
+
+        // ── Edit-screen ownership check ───────────────────────────────────────
+        $edit_schema_mismatch = false;
+        $edit_schema          = null;
+        if ( $edit_schema_id > 0 ) {
+            $edit_schema = $this->schemas->get( $edit_schema_id );
+            if ( null === $edit_schema ) {
+                $edit_schema_mismatch = true;
+            } elseif ( $rule_id > 0 && (int) $edit_schema['rule_id'] !== $rule_id ) {
+                $edit_schema_mismatch = true;
+                $edit_schema          = null;
+            }
+        }
+        if ( null === $edit_schema ) {
+            $edit_schema = array(
+                'id'            => 0,
+                'label'         => '',
+                'schema_type'   => 'Custom',
+                'schema_source' => 'manual_json',
+                'schema_json'   => "{\n  \"@type\": \"Thing\"\n}",
+                'priority'      => 10,
+                'is_active'     => 1,
+            );
+        }
         $settings = get_option( 'scm_settings', array() );
 
         $rule_summary = $this->build_rule_summary( $rule, $schemas );
@@ -292,6 +324,89 @@ class SCM_Admin {
     public function render_settings_page() {
         $settings = get_option( 'scm_settings', array() );
         include SCM_PLUGIN_DIR . 'admin/views/settings.php';
+    }
+
+    // ── Validation ──────────────────────────────────────────────────────────
+
+    /**
+     * Validate schema ownership before any save or update.
+     *
+     * Checks (in order):
+     *  1. rule_id is present and > 0
+     *  2. the rule actually exists
+     *  3. when editing (schema_id > 0): the schema exists
+     *  4. when editing: the schema belongs to this rule (not another)
+     *  5. schema_json is not empty
+     *
+     * Public so that test subclasses can call it directly without instantiating
+     * the full WordPress admin environment.
+     *
+     * @param int        $rule_id         Rule context from the form (POST rule_id).
+     * @param int        $schema_id       Schema being edited; 0 for a new schema.
+     * @param array|null $rule            Result of rules->get($rule_id); null if not found.
+     * @param array|null $existing_schema Result of schemas->get($schema_id); null if not found.
+     * @param string     $schema_json     Raw JSON payload from the form.
+     * @return WP_Error|null              null on success, WP_Error on the first failure.
+     */
+    public function validate_schema_ownership(
+        int    $rule_id,
+        int    $schema_id,
+        ?array $rule,
+        ?array $existing_schema,
+        string $schema_json
+    ): ?WP_Error {
+        if ( $rule_id <= 0 ) {
+            return new WP_Error(
+                'missing_rule_id',
+                __( 'No rule context provided. A schema must be saved under a specific rule.', 'schema-control-manager' )
+            );
+        }
+
+        if ( null === $rule ) {
+            return new WP_Error(
+                'rule_not_found',
+                sprintf(
+                    /* translators: %d: rule ID */
+                    __( 'Rule #%d does not exist. The schema cannot be saved.', 'schema-control-manager' ),
+                    $rule_id
+                )
+            );
+        }
+
+        if ( $schema_id > 0 ) {
+            if ( null === $existing_schema ) {
+                return new WP_Error(
+                    'schema_not_found',
+                    sprintf(
+                        /* translators: %d: schema ID */
+                        __( 'Schema #%d does not exist. It may have been deleted.', 'schema-control-manager' ),
+                        $schema_id
+                    )
+                );
+            }
+
+            if ( (int) $existing_schema['rule_id'] !== $rule_id ) {
+                return new WP_Error(
+                    'schema_rule_mismatch',
+                    sprintf(
+                        /* translators: 1: schema ID, 2: actual rule ID, 3: expected rule ID */
+                        __( 'Schema #%1$d belongs to Rule #%2$d, not Rule #%3$d. Saving is blocked to prevent data corruption.', 'schema-control-manager' ),
+                        $schema_id,
+                        (int) $existing_schema['rule_id'],
+                        $rule_id
+                    )
+                );
+            }
+        }
+
+        if ( '' === trim( $schema_json ) ) {
+            return new WP_Error(
+                'empty_schema_json',
+                __( 'The schema JSON payload is empty. Nothing was saved.', 'schema-control-manager' )
+            );
+        }
+
+        return null;
     }
 
     // ── Private helpers ─────────────────────────────────────────────────────

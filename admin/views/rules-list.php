@@ -8,6 +8,25 @@
         <div class="notice notice-success"><p><?php esc_html_e( 'Rule deleted.', 'schema-control-manager' ); ?></p></div>
     <?php endif; ?>
 
+    <?php if ( ! empty( $orphan_count ) ) : ?>
+        <div class="notice notice-warning">
+            <p>
+                <strong><?php esc_html_e( 'Data integrity warning', 'schema-control-manager' ); ?></strong> &mdash;
+                <?php printf(
+                    /* translators: %d: number of orphan schemas */
+                    esc_html( _n(
+                        '%d schema is referencing a rule that no longer exists.',
+                        '%d schemas are referencing rules that no longer exist.',
+                        $orphan_count,
+                        'schema-control-manager'
+                    ) ),
+                    (int) $orphan_count
+                ); ?>
+                <?php esc_html_e( 'These schemas cannot be rendered and should be deleted or reassigned.', 'schema-control-manager' ); ?>
+            </p>
+        </div>
+    <?php endif; ?>
+
     <form method="get" class="scm-filters">
         <input type="hidden" name="page" value="scm_rules">
         <input type="search" name="s" placeholder="<?php esc_attr_e( 'Search label or target', 'schema-control-manager' ); ?>" value="<?php echo esc_attr( $_GET['s'] ?? '' ); ?>">

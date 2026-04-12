@@ -3,9 +3,36 @@
     <h1><?php echo $rule['id'] ? esc_html__( 'Edit Rule', 'schema-control-manager' ) : esc_html__( 'Add Rule', 'schema-control-manager' ); ?></h1>
 
     <?php if ( ! empty( $_GET['updated'] ) ) : ?><div class="notice notice-success"><p><?php esc_html_e( 'Rule saved.', 'schema-control-manager' ); ?></p></div><?php endif; ?>
-    <?php if ( ! empty( $_GET['schema_updated'] ) ) : ?><div class="notice notice-success"><p><?php esc_html_e( 'Schema saved.', 'schema-control-manager' ); ?></p></div><?php endif; ?>
+    <?php if ( ! empty( $_GET['schema_updated'] ) ) : ?>
+    <div class="notice notice-success"><p>
+        <?php
+        $rule_label_for_notice = ! empty( $rule['label'] ) ? $rule['label'] : ( $rule['id'] ? '#' . (int) $rule['id'] : '' );
+        if ( $rule_label_for_notice ) {
+            /* translators: %s: rule label */
+            printf( esc_html__( 'Schema saved for rule: %s', 'schema-control-manager' ), '<strong>' . esc_html( $rule_label_for_notice ) . '</strong>' );
+        } else {
+            esc_html_e( 'Schema saved.', 'schema-control-manager' );
+        }
+        ?>
+    </p></div>
+    <?php endif; ?>
     <?php if ( ! empty( $_GET['schema_deleted'] ) ) : ?><div class="notice notice-success"><p><?php esc_html_e( 'Schema deleted.', 'schema-control-manager' ); ?></p></div><?php endif; ?>
     <?php if ( ! empty( $_GET['schema_error'] ) ) : ?><div class="notice notice-error"><p><?php echo esc_html( wp_unslash( $_GET['schema_error'] ) ); ?></p></div><?php endif; ?>
+
+    <?php if ( ! empty( $edit_schema_mismatch ) ) : ?>
+    <div class="notice notice-warning">
+        <p><strong><?php esc_html_e( 'Schema access blocked', 'schema-control-manager' ); ?></strong></p>
+        <p><?php
+        if ( ! empty( $_GET['schema_id'] ) ) {
+            printf(
+                /* translators: %d: schema ID */
+                esc_html__( 'Schema #%d cannot be edited here — it does not belong to this rule. A blank form has been loaded instead.', 'schema-control-manager' ),
+                (int) $_GET['schema_id']
+            );
+        }
+        ?></p>
+    </div>
+    <?php endif; ?>
 
     <?php // ── Runtime notices from last frontend page load ───────────────── ?>
     <?php if ( ! empty( $runtime_notices ) ) : ?>
@@ -153,7 +180,12 @@
     </div>
 
     <div class="scm-card">
-        <h2><?php esc_html_e( 'Schemas attached to this rule', 'schema-control-manager' ); ?></h2>
+        <h2>
+            <?php esc_html_e( 'Schemas attached to this rule', 'schema-control-manager' ); ?>
+            <?php if ( ! empty( $rule['label'] ) ) : ?>
+                <span class="scm-rule-owner-badge"><?php echo esc_html( $rule['label'] ); ?></span>
+            <?php endif; ?>
+        </h2>
         <?php if ( ! $rule['id'] ) : ?>
             <p><?php esc_html_e( 'Save the rule first to attach schemas.', 'schema-control-manager' ); ?></p>
         <?php elseif ( empty( $schemas ) ) : ?>
@@ -344,7 +376,18 @@
 
     <?php if ( $rule['id'] ) : ?>
     <div class="scm-card scm-card-full">
-        <h2><?php echo $edit_schema['id'] ? esc_html__( 'Edit Schema', 'schema-control-manager' ) : esc_html__( 'Add Schema', 'schema-control-manager' ); ?></h2>
+        <h2>
+            <?php echo $edit_schema['id'] ? esc_html__( 'Edit Schema', 'schema-control-manager' ) : esc_html__( 'Add Schema', 'schema-control-manager' ); ?>
+            <?php if ( ! empty( $rule['label'] ) ) : ?>
+                <span class="scm-rule-owner-badge"><?php
+                    printf(
+                        /* translators: %s: rule label */
+                        esc_html__( 'Rule: %s', 'schema-control-manager' ),
+                        esc_html( $rule['label'] )
+                    );
+                ?></span>
+            <?php endif; ?>
+        </h2>
         <form method="post">
             <?php wp_nonce_field( 'scm_save_schema' ); ?>
             <input type="hidden" name="rule_id" value="<?php echo esc_attr( $rule['id'] ); ?>">

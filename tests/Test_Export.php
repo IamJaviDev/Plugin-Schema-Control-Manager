@@ -9,22 +9,28 @@ use PHPUnit\Framework\TestCase;
 
 // ── Stubs ─────────────────────────────────────────────────────────────────────
 
-class Stub_Rules_For_Export {
+class Stub_Rules_For_Export extends SCM_Rules {
     private array $rows;
-    public function __construct( array $rows ) { $this->rows = $rows; }
-    public function get_all( array $args = [] ): array { return $this->rows; }
-    public function get( int $id ): ?array {
+    public function __construct( array $rows ) {
+        parent::__construct( new SCM_DB() );
+        $this->rows = $rows;
+    }
+    public function get_all( $args = array() ) { return $this->rows; }
+    public function get( $id ): ?array {
         foreach ( $this->rows as $row ) {
-            if ( (int) $row['id'] === $id ) { return $row; }
+            if ( (int) $row['id'] === (int) $id ) { return $row; }
         }
         return null;
     }
 }
 
-class Stub_Schemas_For_Export {
+class Stub_Schemas_For_Export extends SCM_Schemas {
     private array $map; // rule_id => schemas[]
-    public function __construct( array $map ) { $this->map = $map; }
-    public function get_by_rule( int $rule_id ): array { return $this->map[ $rule_id ] ?? []; }
+    public function __construct( array $map ) {
+        parent::__construct( new SCM_DB(), new SCM_Validator() );
+        $this->map = $map;
+    }
+    public function get_by_rule( $rule_id ) { return $this->map[ (int) $rule_id ] ?? []; }
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -63,9 +69,7 @@ class Test_Export extends TestCase {
     private function make_ie( array $rules_rows, array $schema_map ): SCM_Import_Export {
         $rules   = new Stub_Rules_For_Export( $rules_rows );
         $schemas = new Stub_Schemas_For_Export( $schema_map );
-        // SCM_Import_Export constructor: SCM_Rules, SCM_Schemas, SCM_Validator
-        // We pass our stubs because PHP doesn't enforce type hints at runtime for non-final classes.
-        return new SCM_Import_Export( $rules, $schemas, new class { public function validate_json() {} } );
+        return new SCM_Import_Export( $rules, $schemas, new SCM_Validator() );
     }
 
     // ── export_all() ──────────────────────────────────────────────────────────
@@ -161,10 +165,11 @@ class Test_Export extends TestCase {
         try {
             $ie->download_export_rule( $rule_id );
         } catch ( \RuntimeException $e ) {
-            ob_end_clean();
-            throw $e;
-        } catch ( \Throwable $e ) {
-            // exit() in stream_json_download becomes an exception in PHPUnit -- just catch and ignore.
+            // wp_die('') signals stream done (empty message); wp_die('Rule not found.') signals an error.
+            if ( '' !== $e->getMessage() ) {
+                ob_end_clean();
+                throw $e;
+            }
         }
         $json = ob_get_clean();
         return json_decode( $json, true ) ?: [];

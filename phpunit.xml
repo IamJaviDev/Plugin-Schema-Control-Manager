@@ -7,7 +7,7 @@
 >
     <testsuites>
         <testsuite name="Schema Control Manager">
-            <directory>tests</directory>
+            <directory prefix="Test_" suffix=".php">tests</directory>
         </testsuite>
     </testsuites>
 </phpunit>

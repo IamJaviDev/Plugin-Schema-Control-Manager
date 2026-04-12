@@ -62,7 +62,7 @@ class SCM_Import_Export {
         header( 'Content-Disposition: attachment; filename="' . sanitize_file_name( $filename ) . '"' );
         // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
         echo wp_json_encode( $payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
-        exit;
+        wp_die( '' );
     }
 
     public function export_all() {

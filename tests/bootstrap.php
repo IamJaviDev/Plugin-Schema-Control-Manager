@@ -4,9 +4,12 @@
  * Runs without a full WordPress installation.
  */
 
-define( 'ABSPATH', __DIR__ . '/' );
-define( 'SCM_VERSION', '1.5.0' );
-define( 'SCM_PLUGIN_DIR', dirname( __DIR__ ) . '/' );
+defined( 'ABSPATH' )          || define( 'ABSPATH',          __DIR__ . '/' );
+defined( 'SCM_VERSION' )      || define( 'SCM_VERSION',      '1.5.0' );
+defined( 'SCM_PLUGIN_DIR' )   || define( 'SCM_PLUGIN_DIR',   dirname( __DIR__ ) . '/' );
+defined( 'HOUR_IN_SECONDS' )  || define( 'HOUR_IN_SECONDS',  3600 );
+defined( 'DAY_IN_SECONDS' )   || define( 'DAY_IN_SECONDS',   86400 );
+defined( 'WEEK_IN_SECONDS' )  || define( 'WEEK_IN_SECONDS',  604800 );
 
 // ── Minimal WordPress function stubs ─────────────────────────────────────────
 
@@ -44,6 +47,14 @@ if ( ! function_exists( 'esc_html__' ) ) {
     function esc_html__( $text, $domain = '' ) { return $text; }
 }
 
+if ( ! function_exists( '__' ) ) {
+    function __( $text, $domain = '' ) { return $text; }
+}
+
+if ( ! function_exists( 'esc_html' ) ) {
+    function esc_html( $text ) { return htmlspecialchars( (string) $text, ENT_QUOTES ); }
+}
+
 if ( ! function_exists( 'add_filter' ) ) {
     function add_filter( $hook, $callback, $priority = 10, $accepted_args = 1 ) {}
 }
@@ -69,6 +80,18 @@ if ( ! function_exists( 'update_option' ) ) {
 
 if ( ! function_exists( 'delete_option' ) ) {
     function delete_option( $key ) {}
+}
+
+if ( ! function_exists( 'set_transient' ) ) {
+    function set_transient( $key, $value, $expiration = 0 ) { return true; }
+}
+
+if ( ! function_exists( 'get_transient' ) ) {
+    function get_transient( $key ) { return false; }
+}
+
+if ( ! function_exists( 'delete_transient' ) ) {
+    function delete_transient( $key ) { return true; }
 }
 
 if ( ! class_exists( 'WP_Error' ) ) {
