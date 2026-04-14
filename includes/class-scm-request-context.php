@@ -49,6 +49,9 @@ class SCM_Request_Context {
     /** @var string Post type for the current CPT archive. */
     public $archive_post_type = '';
 
+    /** @var string Singular label of the current CPT archive post type (e.g. "Movie"). */
+    public $archive_post_type_label = '';
+
     /** @var string Slug of the current category term. */
     public $category_slug = '';
 
@@ -179,6 +182,10 @@ class SCM_Request_Context {
         $ctx->is_post_type_archive = (bool) is_post_type_archive();
         if ( $ctx->is_post_type_archive ) {
             $ctx->archive_post_type = (string) get_query_var( 'post_type', '' );
+            if ( '' !== $ctx->archive_post_type ) {
+                $pto = get_post_type_object( $ctx->archive_post_type );
+                $ctx->archive_post_type_label = is_object( $pto ) ? (string) ( $pto->labels->singular_name ?? $pto->label ?? '' ) : '';
+            }
         }
 
         $ctx->is_category = (bool) is_category();

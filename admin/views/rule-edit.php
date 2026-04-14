@@ -447,6 +447,10 @@
                                     <tr><td><code>{{queried_taxonomy}}</code></td><td><?php esc_html_e( 'Taxonomy name of the current term archive', 'schema-control-manager' ); ?></td></tr>
                                     <tr><td><code>{{author_name}}</code></td><td><?php esc_html_e( 'Display name on an author archive page', 'schema-control-manager' ); ?></td></tr>
                                     <tr><td><code>{{author_slug}}</code></td><td><?php esc_html_e( 'Nicename (slug) on an author archive page', 'schema-control-manager' ); ?></td></tr>
+                                    <tr><td><code>{{site_name}}</code></td><td><?php esc_html_e( 'Site name (Settings → General → Site Title)', 'schema-control-manager' ); ?></td></tr>
+                                    <tr><td><code>{{site_url}}</code></td><td><?php esc_html_e( 'Site home URL', 'schema-control-manager' ); ?></td></tr>
+                                    <tr><td><code>{{archive_post_type}}</code></td><td><?php esc_html_e( 'Post type slug on a CPT archive page (e.g. movie)', 'schema-control-manager' ); ?></td></tr>
+                                    <tr><td><code>{{archive_post_type_label}}</code></td><td><?php esc_html_e( 'Singular label of the CPT on a CPT archive page (e.g. Movie)', 'schema-control-manager' ); ?></td></tr>
                                 </tbody>
                             </table>
                             <p class="description"><?php esc_html_e( 'Unresolved placeholders are replaced with an empty string. Placeholders are only active at runtime — the preview above shows raw tokens.', 'schema-control-manager' ); ?></p>

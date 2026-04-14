@@ -23,6 +23,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  *   {{queried_taxonomy}}    — taxonomy of the current term archive
  *   {{author_name}}         — display name on an author archive
  *   {{author_slug}}         — nicename on an author archive
+ *   {{site_name}}           — site name (get_bloginfo('name'))
+ *   {{site_url}}            — site home URL (home_url('/'))
+ *   {{archive_post_type}}   — post type slug on a CPT archive page
+ *   {{archive_post_type_label}} — singular label of the CPT on an archive page
  */
 class SCM_Template_Resolver {
 
@@ -122,6 +126,14 @@ class SCM_Template_Resolver {
                 return $context->author_name;
             case 'author_slug':
                 return $context->author_slug;
+            case 'archive_post_type':
+                return $context->archive_post_type;
+            case 'archive_post_type_label':
+                return $context->archive_post_type_label;
+            case 'site_name':
+                return function_exists( 'get_bloginfo' ) ? (string) get_bloginfo( 'name' ) : '';
+            case 'site_url':
+                return function_exists( 'home_url' ) ? (string) home_url( '/' ) : '';
         }
 
         return '';

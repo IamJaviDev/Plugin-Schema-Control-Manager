@@ -191,6 +191,20 @@ if ( ! function_exists( 'wp_strip_all_tags' ) ) {
 if ( ! function_exists( 'get_permalink' ) ) {
     function get_permalink( $id ) { return $GLOBALS['scm_test_wp_query']['permalink'] ?? false; }
 }
+if ( ! function_exists( 'get_bloginfo' ) ) {
+    function get_bloginfo( $show = '' ) {
+        return $GLOBALS['scm_test_wp_query']['bloginfo'][ $show ] ?? '';
+    }
+}
+if ( ! function_exists( 'get_post_type_object' ) ) {
+    /**
+     * Test stub: returns an object from $GLOBALS['scm_test_wp_query']['post_type_objects'][$post_type]
+     * or null if not set. Tests set this global to control label resolution.
+     */
+    function get_post_type_object( $post_type ) {
+        return $GLOBALS['scm_test_wp_query']['post_type_objects'][ $post_type ] ?? null;
+    }
+}
 
 // ── Load classes under test ───────────────────────────────────────────────────
 

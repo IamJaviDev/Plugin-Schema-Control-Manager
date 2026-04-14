@@ -161,4 +161,56 @@ class Test_Template_Resolver extends TestCase {
 
         $this->assertSame( '', $result );
     }
+
+    // ── New: site_name resolves via get_bloginfo() ────────────────────────────
+
+    public function test_site_name_resolves_correctly(): void {
+        $GLOBALS['scm_test_wp_query']['bloginfo']['name'] = 'Mi Sitio Web';
+
+        $context = SCM_Request_Context::from_array( array() );
+        $json    = '{"name":"{{site_name}}"}';
+        $result  = $this->resolver->resolve( $json, $context );
+
+        $this->assertSame( '{"name":"Mi Sitio Web"}', $result );
+    }
+
+    // ── New: site_url resolves via home_url('/') ──────────────────────────────
+
+    public function test_site_url_resolves_correctly(): void {
+        // home_url() stub always returns 'https://example.com' + $path.
+        $context = SCM_Request_Context::from_array( array() );
+        $result  = $this->resolver->resolve_placeholder( 'site_url', $context );
+
+        $this->assertSame( 'https://example.com/', $result );
+    }
+
+    // ── New: archive_post_type resolves on CPT archive context ───────────────
+
+    public function test_archive_post_type_resolves_on_archive_context(): void {
+        $context = SCM_Request_Context::from_array( array( 'archive_post_type' => 'movie' ) );
+        $json    = '{"type":"{{archive_post_type}}"}';
+        $result  = $this->resolver->resolve( $json, $context );
+
+        $this->assertSame( '{"type":"movie"}', $result );
+    }
+
+    // ── New: archive_post_type_label resolves on CPT archive context ──────────
+
+    public function test_archive_post_type_label_resolves_on_archive_context(): void {
+        $context = SCM_Request_Context::from_array( array( 'archive_post_type_label' => 'Movie' ) );
+        $json    = '{"label":"{{archive_post_type_label}}"}';
+        $result  = $this->resolver->resolve( $json, $context );
+
+        $this->assertSame( '{"label":"Movie"}', $result );
+    }
+
+    // ── New: archive placeholders return '' outside archive context ───────────
+
+    public function test_archive_placeholders_return_empty_outside_archive(): void {
+        // No archive_post_type or archive_post_type_label set.
+        $context = SCM_Request_Context::from_array( array( 'is_singular' => true, 'post_id' => 5 ) );
+
+        $this->assertSame( '', $this->resolver->resolve_placeholder( 'archive_post_type', $context ) );
+        $this->assertSame( '', $this->resolver->resolve_placeholder( 'archive_post_type_label', $context ) );
+    }
 }
