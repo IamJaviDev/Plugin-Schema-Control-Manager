@@ -227,11 +227,12 @@ class SCM_Admin {
     }
 
     public function render_rules_page() {
-        $rules = $this->rules->get_all(
+        $search = sanitize_text_field( $_GET['search'] ?? '' );
+        $rules  = $this->rules->get_all(
             array(
                 'target_type' => sanitize_text_field( $_GET['target_type'] ?? '' ),
                 'is_active'   => isset( $_GET['is_active'] ) ? sanitize_text_field( $_GET['is_active'] ) : '',
-                'search'      => sanitize_text_field( $_GET['s'] ?? '' ),
+                'search'      => $search,
             )
         );
         $orphan_count = $this->schemas->get_orphan_count();

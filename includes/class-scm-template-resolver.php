@@ -27,6 +27,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  *   {{site_url}}            — site home URL (home_url('/'))
  *   {{archive_post_type}}   — post type slug on a CPT archive page
  *   {{archive_post_type_label}} — singular label of the CPT on an archive page
+ *   {{featured_image_url}}  — full URL of the featured image for the current singular post
+ *   {{post_date}}           — published date of the current singular post (W3C/ISO 8601)
+ *   {{post_modified_date}}  — last-modified date of the current singular post (W3C/ISO 8601)
  */
 class SCM_Template_Resolver {
 
@@ -134,6 +137,12 @@ class SCM_Template_Resolver {
                 return function_exists( 'get_bloginfo' ) ? (string) get_bloginfo( 'name' ) : '';
             case 'site_url':
                 return function_exists( 'home_url' ) ? (string) home_url( '/' ) : '';
+            case 'featured_image_url':
+                return $context->featured_image_url;
+            case 'post_date':
+                return $context->post_date;
+            case 'post_modified_date':
+                return $context->post_modified_date;
         }
 
         return '';

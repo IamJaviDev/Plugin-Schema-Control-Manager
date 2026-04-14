@@ -102,6 +102,15 @@ class SCM_Request_Context {
     /** @var string Nicename (slug) of the author on an author archive page. */
     public $author_slug = '';
 
+    /** @var string Full URL of the featured image for the current singular post. */
+    public $featured_image_url = '';
+
+    /** @var string Published date of the current singular post in W3C/ISO 8601 format. */
+    public $post_date = '';
+
+    /** @var string Last-modified date of the current singular post in W3C/ISO 8601 format. */
+    public $post_modified_date = '';
+
     // ── Static context cache ──────────────────────────────────────────────────
 
     /**
@@ -225,6 +234,25 @@ class SCM_Request_Context {
         if ( $ctx->post_id > 0 ) {
             $permalink     = get_permalink( $ctx->post_id );
             $ctx->post_url = $permalink ? (string) $permalink : '';
+
+            // Featured image URL.
+            if ( function_exists( 'get_post_thumbnail_id' ) && function_exists( 'wp_get_attachment_image_url' ) ) {
+                $thumb_id = get_post_thumbnail_id( $ctx->post_id );
+                if ( $thumb_id ) {
+                    $img_url = wp_get_attachment_image_url( $thumb_id, 'full' );
+                    $ctx->featured_image_url = $img_url ? (string) $img_url : '';
+                }
+            }
+
+            // Published and modified dates.
+            if ( function_exists( 'get_post_time' ) ) {
+                $date = get_post_time( DATE_W3C, true, $ctx->post_id );
+                $ctx->post_date = $date ? (string) $date : '';
+            }
+            if ( function_exists( 'get_post_modified_time' ) ) {
+                $modified = get_post_modified_time( DATE_W3C, true, $ctx->post_id );
+                $ctx->post_modified_date = $modified ? (string) $modified : '';
+            }
         }
 
         // Queried term placeholders (category / tag / custom taxonomy archives).

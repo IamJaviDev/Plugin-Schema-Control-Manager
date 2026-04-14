@@ -28,7 +28,8 @@ class SCM_Rules {
 
         if ( ! empty( $args['search'] ) ) {
             $like     = '%' . $wpdb->esc_like( $args['search'] ) . '%';
-            $sql     .= ' AND (label LIKE %s OR target_value LIKE %s)';
+            $sql     .= ' AND (label LIKE %s OR target_type LIKE %s OR target_value LIKE %s)';
+            $binds[]  = $like;
             $binds[]  = $like;
             $binds[]  = $like;
         }

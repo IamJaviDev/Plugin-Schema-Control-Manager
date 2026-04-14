@@ -205,6 +205,26 @@ if ( ! function_exists( 'get_post_type_object' ) ) {
         return $GLOBALS['scm_test_wp_query']['post_type_objects'][ $post_type ] ?? null;
     }
 }
+if ( ! function_exists( 'get_post_thumbnail_id' ) ) {
+    function get_post_thumbnail_id( $post_id ) {
+        return $GLOBALS['scm_test_wp_query']['thumbnail_id'][ $post_id ] ?? 0;
+    }
+}
+if ( ! function_exists( 'wp_get_attachment_image_url' ) ) {
+    function wp_get_attachment_image_url( $attachment_id, $size = 'thumbnail' ) {
+        return $GLOBALS['scm_test_wp_query']['attachment_url'][ $attachment_id ] ?? false;
+    }
+}
+if ( ! function_exists( 'get_post_time' ) ) {
+    function get_post_time( $format = 'U', $gmt = false, $post = null ) {
+        return $GLOBALS['scm_test_wp_query']['post_time'][ $post ] ?? false;
+    }
+}
+if ( ! function_exists( 'get_post_modified_time' ) ) {
+    function get_post_modified_time( $format = 'U', $gmt = false, $post = null ) {
+        return $GLOBALS['scm_test_wp_query']['post_modified_time'][ $post ] ?? false;
+    }
+}
 
 // ── Load classes under test ───────────────────────────────────────────────────
 

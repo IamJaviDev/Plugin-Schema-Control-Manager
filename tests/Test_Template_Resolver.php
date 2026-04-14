@@ -213,4 +213,67 @@ class Test_Template_Resolver extends TestCase {
         $this->assertSame( '', $this->resolver->resolve_placeholder( 'archive_post_type', $context ) );
         $this->assertSame( '', $this->resolver->resolve_placeholder( 'archive_post_type_label', $context ) );
     }
+
+    // ── New: featured_image_url resolves when image exists ───────────────────
+
+    public function test_featured_image_url_resolves_when_image_exists(): void {
+        $context = SCM_Request_Context::from_array( array(
+            'featured_image_url' => 'https://example.com/wp-content/uploads/photo.jpg',
+        ) );
+
+        $json   = '{"image":"{{featured_image_url}}"}';
+        $result = $this->resolver->resolve( $json, $context );
+
+        $this->assertSame( '{"image":"https://example.com/wp-content/uploads/photo.jpg"}', $result );
+    }
+
+    // ── New: featured_image_url returns '' when no image ─────────────────────
+
+    public function test_featured_image_url_returns_empty_when_no_image(): void {
+        $context = SCM_Request_Context::from_array( array( 'post_id' => 5 ) ); // featured_image_url not set
+
+        $result = $this->resolver->resolve_placeholder( 'featured_image_url', $context );
+
+        $this->assertSame( '', $result );
+    }
+
+    // ── New: post_date resolves correctly ─────────────────────────────────────
+
+    public function test_post_date_resolves_correctly(): void {
+        $context = SCM_Request_Context::from_array( array(
+            'post_date' => '2024-06-15T10:30:00+00:00',
+        ) );
+
+        $json   = '{"datePublished":"{{post_date}}"}';
+        $result = $this->resolver->resolve( $json, $context );
+
+        $this->assertSame( '{"datePublished":"2024-06-15T10:30:00+00:00"}', $result );
+    }
+
+    // ── New: post_modified_date resolves correctly ────────────────────────────
+
+    public function test_post_modified_date_resolves_correctly(): void {
+        $context = SCM_Request_Context::from_array( array(
+            'post_modified_date' => '2025-01-20T08:00:00+00:00',
+        ) );
+
+        $json   = '{"dateModified":"{{post_modified_date}}"}';
+        $result = $this->resolver->resolve( $json, $context );
+
+        $this->assertSame( '{"dateModified":"2025-01-20T08:00:00+00:00"}', $result );
+    }
+
+    // ── New: all three return '' outside singular context ─────────────────────
+
+    public function test_date_and_image_placeholders_return_empty_outside_singular(): void {
+        // Simulates a taxonomy archive: no post_id, no singular data.
+        $context = SCM_Request_Context::from_array( array(
+            'queried_term_name' => 'Sedanes',
+            'queried_term_slug' => 'sedanes',
+        ) );
+
+        $this->assertSame( '', $this->resolver->resolve_placeholder( 'featured_image_url', $context ) );
+        $this->assertSame( '', $this->resolver->resolve_placeholder( 'post_date', $context ) );
+        $this->assertSame( '', $this->resolver->resolve_placeholder( 'post_modified_date', $context ) );
+    }
 }

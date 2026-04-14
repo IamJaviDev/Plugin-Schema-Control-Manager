@@ -451,6 +451,9 @@
                                     <tr><td><code>{{site_url}}</code></td><td><?php esc_html_e( 'Site home URL', 'schema-control-manager' ); ?></td></tr>
                                     <tr><td><code>{{archive_post_type}}</code></td><td><?php esc_html_e( 'Post type slug on a CPT archive page (e.g. movie)', 'schema-control-manager' ); ?></td></tr>
                                     <tr><td><code>{{archive_post_type_label}}</code></td><td><?php esc_html_e( 'Singular label of the CPT on a CPT archive page (e.g. Movie)', 'schema-control-manager' ); ?></td></tr>
+                                    <tr><td><code>{{featured_image_url}}</code></td><td><?php esc_html_e( 'Full URL of the featured image for the current singular post', 'schema-control-manager' ); ?></td></tr>
+                                    <tr><td><code>{{post_date}}</code></td><td><?php esc_html_e( 'Published date of the current singular post (ISO 8601)', 'schema-control-manager' ); ?></td></tr>
+                                    <tr><td><code>{{post_modified_date}}</code></td><td><?php esc_html_e( 'Last-modified date of the current singular post (ISO 8601)', 'schema-control-manager' ); ?></td></tr>
                                 </tbody>
                             </table>
                             <p class="description"><?php esc_html_e( 'Unresolved placeholders are replaced with an empty string. Placeholders are only active at runtime — the preview above shows raw tokens.', 'schema-control-manager' ); ?></p>

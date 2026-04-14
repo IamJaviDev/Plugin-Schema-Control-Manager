@@ -29,7 +29,7 @@
 
     <form method="get" class="scm-filters">
         <input type="hidden" name="page" value="scm_rules">
-        <input type="search" name="s" placeholder="<?php esc_attr_e( 'Search label or target', 'schema-control-manager' ); ?>" value="<?php echo esc_attr( $_GET['s'] ?? '' ); ?>">
+        <input type="search" name="search" placeholder="<?php esc_attr_e( 'Search rules...', 'schema-control-manager' ); ?>" value="<?php echo esc_attr( $_GET['search'] ?? '' ); ?>">
         <select name="target_type">
             <option value=""><?php esc_html_e( 'All targets', 'schema-control-manager' ); ?></option>
             <?php foreach ( array( 'home' => 'Home', 'exact_url' => 'Exact URL', 'exact_slug' => 'Exact slug', 'author' => 'Author page' ) as $value => $label ) : ?>
@@ -59,7 +59,7 @@
         </thead>
         <tbody>
             <?php if ( empty( $rules ) ) : ?>
-                <tr><td colspan="8"><?php esc_html_e( 'No rules found.', 'schema-control-manager' ); ?></td></tr>
+                <tr><td colspan="8"><?php echo ! empty( $search ) ? esc_html__( 'No rules found for your search.', 'schema-control-manager' ) : esc_html__( 'No rules found.', 'schema-control-manager' ); ?></td></tr>
             <?php else : ?>
                 <?php foreach ( $rules as $rule ) : ?>
                     <tr>
