@@ -35,6 +35,7 @@ require_once SCM_PLUGIN_DIR . 'includes/class-scm-id-manager.php';
 require_once SCM_PLUGIN_DIR . 'includes/class-scm-reference-rewriter.php';
 require_once SCM_PLUGIN_DIR . 'includes/class-scm-graph-diagnostics.php';
 require_once SCM_PLUGIN_DIR . 'includes/class-scm-request-context.php';
+require_once SCM_PLUGIN_DIR . 'includes/class-scm-template-resolver.php';
 require_once SCM_PLUGIN_DIR . 'includes/class-scm-rules.php';
 require_once SCM_PLUGIN_DIR . 'includes/class-scm-schemas.php';
 require_once SCM_PLUGIN_DIR . 'includes/class-scm-graph-manager.php';
@@ -74,6 +75,9 @@ final class SCM_Plugin {
     /** @var SCM_Graph_Diagnostics */
     public $diagnostics;
 
+    /** @var SCM_Template_Resolver */
+    public $template_resolver;
+
     /** @var SCM_Graph_Manager */
     public $graph_manager;
 
@@ -107,7 +111,8 @@ final class SCM_Plugin {
         $this->id_manager          = new SCM_Id_Manager( $this->classifier );
         $this->reference_rewriter  = new SCM_Reference_Rewriter();
         $this->diagnostics         = new SCM_Graph_Diagnostics( $this->classifier );
-        $this->graph_manager       = new SCM_Graph_Manager( $this->schemas, $this->normalizer, $this->diagnostics, $this->classifier, $this->id_manager, $this->reference_rewriter );
+        $this->template_resolver   = new SCM_Template_Resolver();
+        $this->graph_manager       = new SCM_Graph_Manager( $this->schemas, $this->normalizer, $this->diagnostics, $this->classifier, $this->id_manager, $this->reference_rewriter, $this->template_resolver );
         $this->aioseo        = new SCM_AIOSEO( $this->rules, $this->graph_manager );
         $this->injector      = new SCM_Injector( $this->rules, $this->graph_manager );
         $this->import_export = new SCM_Import_Export( $this->rules, $this->schemas, $this->validator );
@@ -117,6 +122,11 @@ final class SCM_Plugin {
         }
 
         add_action( 'plugins_loaded', array( $this, 'load_textdomain' ) );
+
+        // Capture the WP request context at the earliest safe moment — after the
+        // main query is fully built but before AIOSEO or any other plugin runs
+        // secondary WP_Query loops that would corrupt is_category() / get_queried_object().
+        add_action( 'wp', array( 'SCM_Request_Context', 'prime' ), 1 );
     }
 
     public function load_textdomain() {

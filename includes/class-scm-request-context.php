@@ -73,6 +73,76 @@ class SCM_Request_Context {
     /** @var string Trimmed $wp->request path (exact_slug fallback). */
     public $request_path = '';
 
+    // ── Template placeholder fields ───────────────────────────────────────────
+
+    /** @var string Title of the queried singular post/page. */
+    public $post_title = '';
+
+    /** @var string Permalink of the queried singular post/page. */
+    public $post_url = '';
+
+    /** @var string Excerpt of the queried singular post/page (tags stripped). */
+    public $post_excerpt = '';
+
+    /** @var string Display name of the current term archive (category, tag, custom taxonomy). */
+    public $queried_term_name = '';
+
+    /** @var string Slug of the current term archive. */
+    public $queried_term_slug = '';
+
+    /** @var string Taxonomy name of the current term archive. */
+    public $queried_taxonomy = '';
+
+    /** @var string Display name of the author on an author archive page. */
+    public $author_name = '';
+
+    /** @var string Nicename (slug) of the author on an author archive page. */
+    public $author_slug = '';
+
+    // ── Static context cache ──────────────────────────────────────────────────
+
+    /**
+     * Snapshot captured at 'wp' action time, before any plugin or AIOSEO
+     * secondary queries can alter $wp_query. Null until prime() is called.
+     *
+     * @var self|null
+     */
+    private static $primed_context = null;
+
+    /**
+     * Capture the current WP request state and store it for later use.
+     *
+     * Must be hooked to the 'wp' action (priority 1) so it runs before
+     * AIOSEO or any other plugin fires secondary WP_Query loops that would
+     * make is_category() / get_queried_object() reflect the wrong object.
+     * Subsequent calls are no-ops.
+     */
+    public static function prime(): void {
+        if ( null === self::$primed_context ) {
+            self::$primed_context = self::from_wp();
+        }
+    }
+
+    /**
+     * Return the primed context. Falls back to a fresh from_wp() call when
+     * prime() was never called (e.g. CLI or WP-CLI contexts).
+     *
+     * @return self
+     */
+    public static function get_cached(): self {
+        if ( null !== self::$primed_context ) {
+            return self::$primed_context;
+        }
+        return self::from_wp();
+    }
+
+    /**
+     * Clear the static cache. For use in unit tests only.
+     */
+    public static function reset_cache(): void {
+        self::$primed_context = null;
+    }
+
     // ── Constructors ──────────────────────────────────────────────────────────
 
     private function __construct() {}
@@ -136,6 +206,33 @@ class SCM_Request_Context {
         $ctx->is_author = (bool) is_author();
         if ( $ctx->is_author && is_object( $queried ) && isset( $queried->user_nicename ) ) {
             $ctx->author_nicename = (string) $queried->user_nicename;
+        }
+
+        // ── Template placeholder fields ───────────────────────────────────────
+
+        // Post placeholders (singular pages only).
+        if ( $ctx->is_singular && is_object( $queried ) ) {
+            $ctx->post_title   = (string) ( $queried->post_title ?? '' );
+            $ctx->post_excerpt = wp_strip_all_tags( $queried->post_excerpt ?? '' );
+        }
+        if ( $ctx->post_id > 0 ) {
+            $permalink     = get_permalink( $ctx->post_id );
+            $ctx->post_url = $permalink ? (string) $permalink : '';
+        }
+
+        // Queried term placeholders (category / tag / custom taxonomy archives).
+        // All three values are read directly from the queried object so there is
+        // no dependency on the intermediate $ctx->term_slug / $ctx->taxonomy chain.
+        if ( $ctx->is_category || $ctx->is_tag || $ctx->is_tax ) {
+            $ctx->queried_term_name = isset( $queried->name )     ? (string) $queried->name     : '';
+            $ctx->queried_term_slug = isset( $queried->slug )     ? (string) $queried->slug     : '';
+            $ctx->queried_taxonomy  = isset( $queried->taxonomy ) ? (string) $queried->taxonomy : '';
+        }
+
+        // Author placeholders.
+        if ( $ctx->is_author && is_object( $queried ) ) {
+            $ctx->author_name = (string) ( $queried->display_name ?? '' );
+            $ctx->author_slug = $ctx->author_nicename;
         }
 
         return $ctx;

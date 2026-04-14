@@ -1,0 +1,164 @@
+<?php
+/**
+ * Tests: SCM_Template_Resolver
+ *
+ * Verifies that placeholders are resolved correctly for all supported token
+ * types and that edge cases (missing values, no placeholders) are handled
+ * without errors.
+ */
+
+use PHPUnit\Framework\TestCase;
+
+class Test_Template_Resolver extends TestCase {
+
+    private SCM_Template_Resolver $resolver;
+
+    protected function setUp(): void {
+        $this->resolver = new SCM_Template_Resolver();
+
+        // Reset test stubs between tests.
+        $GLOBALS['scm_test_post_meta'] = array();
+        $GLOBALS['scm_test_terms']     = array();
+    }
+
+    // ── 1. Basic placeholder replacement ──────────────────────────────────────
+
+    public function test_basic_placeholder_replacement(): void {
+        $context = SCM_Request_Context::from_array( array(
+            'post_id'    => 7,
+            'post_title' => 'Desguace en Madrid',
+            'post_url'   => 'https://example.com/desguace-madrid',
+            'post_type'  => 'auto',
+        ) );
+
+        $json = '{"name":"{{post_title}}","url":"{{post_url}}","@type":"{{post_type}}","id":{{post_id}}}';
+
+        $result = $this->resolver->resolve( $json, $context );
+
+        $this->assertSame(
+            '{"name":"Desguace en Madrid","url":"https://example.com/desguace-madrid","@type":"auto","id":7}',
+            $result
+        );
+    }
+
+    // ── 2. Meta placeholder replacement ──────────────────────────────────────
+
+    public function test_meta_placeholder_replacement(): void {
+        $GLOBALS['scm_test_post_meta'][42]['telefono']  = '555-1234';
+        $GLOBALS['scm_test_post_meta'][42]['direccion'] = 'Calle Mayor 1';
+
+        $context = SCM_Request_Context::from_array( array( 'post_id' => 42 ) );
+        $json    = '{"telephone":"{{meta:telefono}}","address":"{{meta:direccion}}"}';
+
+        $result = $this->resolver->resolve( $json, $context );
+
+        $this->assertSame(
+            '{"telephone":"555-1234","address":"Calle Mayor 1"}',
+            $result
+        );
+    }
+
+    // ── 3. Taxonomy term placeholder replacement ──────────────────────────────
+
+    public function test_term_placeholder_replacement(): void {
+        $term              = new stdClass();
+        $term->name        = 'Sedanes';
+        $term->slug        = 'sedanes';
+        $GLOBALS['scm_test_terms'][10]['tipo_vehiculo'] = array( $term );
+
+        $context = SCM_Request_Context::from_array( array( 'post_id' => 10 ) );
+        $json    = '{"category":"{{term:tipo_vehiculo}}"}';
+
+        $result = $this->resolver->resolve( $json, $context );
+
+        $this->assertSame( '{"category":"Sedanes"}', $result );
+    }
+
+    // ── 4. Unresolved placeholder becomes empty string ────────────────────────
+
+    public function test_unresolved_placeholder_becomes_empty_string(): void {
+        $context = SCM_Request_Context::from_array( array() ); // nothing set
+
+        $json   = '{"name":"{{post_title}}","unknown":"{{totally_unknown_token}}"}';
+        $result = $this->resolver->resolve( $json, $context );
+
+        $this->assertSame( '{"name":"","unknown":""}', $result );
+    }
+
+    // ── 5. Schema without placeholders is returned unchanged ─────────────────
+
+    public function test_schema_without_placeholders_unchanged(): void {
+        $context = SCM_Request_Context::from_array( array( 'post_title' => 'Ignored' ) );
+        $json    = '{"@type":"LocalBusiness","name":"Static Name"}';
+
+        $result = $this->resolver->resolve( $json, $context );
+
+        $this->assertSame( $json, $result );
+    }
+
+    // ── 6. Queried term placeholder replacement ───────────────────────────────
+
+    public function test_queried_term_placeholder_replacement(): void {
+        $context = SCM_Request_Context::from_array( array(
+            'queried_term_name' => 'Berlinas',
+            'queried_term_slug' => 'berlinas',
+            'queried_taxonomy'  => 'tipo_vehiculo',
+        ) );
+
+        $json = '{"name":"{{queried_term_name}}","slug":"{{queried_term_slug}}","taxonomy":"{{queried_taxonomy}}"}';
+
+        $result = $this->resolver->resolve( $json, $context );
+
+        $this->assertSame(
+            '{"name":"Berlinas","slug":"berlinas","taxonomy":"tipo_vehiculo"}',
+            $result
+        );
+    }
+
+    // ── 7. Author placeholder replacement ─────────────────────────────────────
+
+    public function test_author_placeholder_replacement(): void {
+        $context = SCM_Request_Context::from_array( array(
+            'author_name' => 'Don Javier',
+            'author_slug' => 'don-javier',
+        ) );
+
+        $json = '{"author":"{{author_name}}","authorUrl":"/author/{{author_slug}}"}';
+
+        $result = $this->resolver->resolve( $json, $context );
+
+        $this->assertSame(
+            '{"author":"Don Javier","authorUrl":"/author/don-javier"}',
+            $result
+        );
+    }
+
+    // ── Extra: has_placeholders() fast check ─────────────────────────────────
+
+    public function test_has_placeholders_returns_false_for_plain_json(): void {
+        $this->assertFalse( $this->resolver->has_placeholders( '{"@type":"Thing"}' ) );
+    }
+
+    public function test_has_placeholders_returns_true_when_present(): void {
+        $this->assertTrue( $this->resolver->has_placeholders( '{"name":"{{post_title}}"}' ) );
+    }
+
+    // ── Extra: meta placeholder with no post_id returns empty string ──────────
+
+    public function test_meta_placeholder_without_post_id_returns_empty(): void {
+        $context = SCM_Request_Context::from_array( array() ); // post_id = 0
+        $result  = $this->resolver->resolve_placeholder( 'meta:telefono', $context );
+
+        $this->assertSame( '', $result );
+    }
+
+    // ── Extra: term placeholder with no matching terms returns empty string ───
+
+    public function test_term_placeholder_with_no_terms_returns_empty(): void {
+        // No terms registered in the stub.
+        $context = SCM_Request_Context::from_array( array( 'post_id' => 99 ) );
+        $result  = $this->resolver->resolve_placeholder( 'term:category', $context );
+
+        $this->assertSame( '', $result );
+    }
+}

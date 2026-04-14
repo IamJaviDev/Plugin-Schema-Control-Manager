@@ -94,6 +94,31 @@ if ( ! function_exists( 'delete_transient' ) ) {
     function delete_transient( $key ) { return true; }
 }
 
+if ( ! function_exists( 'get_post_meta' ) ) {
+    /**
+     * Test stub: reads from $GLOBALS['scm_test_post_meta'][$post_id][$key].
+     * Tests set this global to control return values.
+     */
+    function get_post_meta( $post_id, $key = '', $single = false ) {
+        $map = $GLOBALS['scm_test_post_meta'] ?? array();
+        if ( $single && '' !== $key ) {
+            return $map[ $post_id ][ $key ] ?? '';
+        }
+        return $map[ $post_id ] ?? array();
+    }
+}
+
+if ( ! function_exists( 'get_the_terms' ) ) {
+    /**
+     * Test stub: reads from $GLOBALS['scm_test_terms'][$post_id][$taxonomy].
+     * Tests set this global to control return values.
+     */
+    function get_the_terms( $post_id, $taxonomy ) {
+        $map = $GLOBALS['scm_test_terms'] ?? array();
+        return $map[ $post_id ][ $taxonomy ] ?? false;
+    }
+}
+
 if ( ! class_exists( 'WP_Error' ) ) {
     class WP_Error {
         private $code;
@@ -107,11 +132,72 @@ if ( ! class_exists( 'WP_Error' ) ) {
     }
 }
 
+// ── WordPress query-state stubs (used by Test_Request_Context via from_wp()) ──
+//
+// Tests control return values through $GLOBALS['scm_test_wp_query'].
+// Each stub falls back to a safe default so unrelated tests are unaffected.
+
+$GLOBALS['scm_test_wp_query'] = array();
+
+// Ensure $GLOBALS['wp'] exists so from_wp() can read ->request safely.
+if ( ! isset( $GLOBALS['wp'] ) ) {
+    $GLOBALS['wp'] = (object) array( 'request' => '' );
+}
+
+if ( ! function_exists( 'is_front_page' ) ) {
+    function is_front_page() { return (bool) ( $GLOBALS['scm_test_wp_query']['is_front_page'] ?? false ); }
+}
+if ( ! function_exists( 'is_home' ) ) {
+    function is_home() { return (bool) ( $GLOBALS['scm_test_wp_query']['is_home'] ?? false ); }
+}
+if ( ! function_exists( 'is_singular' ) ) {
+    function is_singular() { return (bool) ( $GLOBALS['scm_test_wp_query']['is_singular'] ?? false ); }
+}
+if ( ! function_exists( 'get_queried_object' ) ) {
+    function get_queried_object() { return $GLOBALS['scm_test_wp_query']['queried_object'] ?? null; }
+}
+if ( ! function_exists( 'is_post_type_archive' ) ) {
+    function is_post_type_archive() { return (bool) ( $GLOBALS['scm_test_wp_query']['is_post_type_archive'] ?? false ); }
+}
+if ( ! function_exists( 'get_query_var' ) ) {
+    function get_query_var( $var, $default = '' ) {
+        return $GLOBALS['scm_test_wp_query']['query_vars'][ $var ] ?? $default;
+    }
+}
+if ( ! function_exists( 'is_category' ) ) {
+    function is_category() { return (bool) ( $GLOBALS['scm_test_wp_query']['is_category'] ?? false ); }
+}
+if ( ! function_exists( 'is_tag' ) ) {
+    function is_tag() { return (bool) ( $GLOBALS['scm_test_wp_query']['is_tag'] ?? false ); }
+}
+if ( ! function_exists( 'is_tax' ) ) {
+    function is_tax() { return (bool) ( $GLOBALS['scm_test_wp_query']['is_tax'] ?? false ); }
+}
+if ( ! function_exists( 'is_author' ) ) {
+    function is_author() { return (bool) ( $GLOBALS['scm_test_wp_query']['is_author'] ?? false ); }
+}
+if ( ! function_exists( 'home_url' ) ) {
+    function home_url( $path = '' ) { return 'https://example.com' . $path; }
+}
+if ( ! function_exists( 'add_query_arg' ) ) {
+    function add_query_arg( $args, $url = '' ) { return $url; }
+}
+if ( ! function_exists( 'untrailingslashit' ) ) {
+    function untrailingslashit( $string ) { return rtrim( (string) $string, '/\\' ); }
+}
+if ( ! function_exists( 'wp_strip_all_tags' ) ) {
+    function wp_strip_all_tags( $string, $remove_breaks = false ) { return strip_tags( (string) $string ); }
+}
+if ( ! function_exists( 'get_permalink' ) ) {
+    function get_permalink( $id ) { return $GLOBALS['scm_test_wp_query']['permalink'] ?? false; }
+}
+
 // ── Load classes under test ───────────────────────────────────────────────────
 
 require_once SCM_PLUGIN_DIR . 'includes/class-scm-db.php';
 require_once SCM_PLUGIN_DIR . 'includes/class-scm-validator.php';
 require_once SCM_PLUGIN_DIR . 'includes/class-scm-request-context.php';
+require_once SCM_PLUGIN_DIR . 'includes/class-scm-template-resolver.php';
 require_once SCM_PLUGIN_DIR . 'includes/class-scm-rules.php';
 require_once SCM_PLUGIN_DIR . 'includes/class-scm-schemas.php';
 require_once SCM_PLUGIN_DIR . 'includes/class-scm-import-export.php';

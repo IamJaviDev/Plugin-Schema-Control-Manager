@@ -431,6 +431,26 @@
                     <td>
                         <textarea class="large-text code scm-json-editor" rows="18" name="schema_json" id="schema_json" required><?php echo esc_textarea( $edit_schema['schema_json'] ); ?></textarea>
                         <p class="description"><?php esc_html_e( 'You can paste a full JSON-LD object, a list of nodes, or an object with @graph. The plugin normalizes to a final @context + @graph structure.', 'schema-control-manager' ); ?></p>
+                        <div class="scm-help-box scm-placeholder-help">
+                            <p><strong><?php esc_html_e( 'Available placeholders', 'schema-control-manager' ); ?></strong></p>
+                            <table class="scm-placeholder-table">
+                                <tbody>
+                                    <tr><td><code>{{post_title}}</code></td><td><?php esc_html_e( 'Title of the current post or page', 'schema-control-manager' ); ?></td></tr>
+                                    <tr><td><code>{{post_url}}</code></td><td><?php esc_html_e( 'Permalink of the current post or page', 'schema-control-manager' ); ?></td></tr>
+                                    <tr><td><code>{{post_excerpt}}</code></td><td><?php esc_html_e( 'Excerpt of the current post or page (tags stripped)', 'schema-control-manager' ); ?></td></tr>
+                                    <tr><td><code>{{post_id}}</code></td><td><?php esc_html_e( 'ID of the current post or page', 'schema-control-manager' ); ?></td></tr>
+                                    <tr><td><code>{{post_type}}</code></td><td><?php esc_html_e( 'Post type of the current singular object', 'schema-control-manager' ); ?></td></tr>
+                                    <tr><td><code>{{meta:FIELD_KEY}}</code></td><td><?php esc_html_e( 'Custom field value — replace FIELD_KEY with the meta key (e.g. {{meta:telefono}})', 'schema-control-manager' ); ?></td></tr>
+                                    <tr><td><code>{{term:TAXONOMY}}</code></td><td><?php esc_html_e( 'First term name for the post in a taxonomy (e.g. {{term:category}})', 'schema-control-manager' ); ?></td></tr>
+                                    <tr><td><code>{{queried_term_name}}</code></td><td><?php esc_html_e( 'Display name of the current term archive (category, tag, custom taxonomy)', 'schema-control-manager' ); ?></td></tr>
+                                    <tr><td><code>{{queried_term_slug}}</code></td><td><?php esc_html_e( 'Slug of the current term archive', 'schema-control-manager' ); ?></td></tr>
+                                    <tr><td><code>{{queried_taxonomy}}</code></td><td><?php esc_html_e( 'Taxonomy name of the current term archive', 'schema-control-manager' ); ?></td></tr>
+                                    <tr><td><code>{{author_name}}</code></td><td><?php esc_html_e( 'Display name on an author archive page', 'schema-control-manager' ); ?></td></tr>
+                                    <tr><td><code>{{author_slug}}</code></td><td><?php esc_html_e( 'Nicename (slug) on an author archive page', 'schema-control-manager' ); ?></td></tr>
+                                </tbody>
+                            </table>
+                            <p class="description"><?php esc_html_e( 'Unresolved placeholders are replaced with an empty string. Placeholders are only active at runtime — the preview above shows raw tokens.', 'schema-control-manager' ); ?></p>
+                        </div>
                         <p><button type="button" class="button" id="scm-validate-json">Validate JSON</button> <span id="scm-json-status"></span></p>
                     </td>
                 </tr>

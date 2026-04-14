@@ -10,6 +10,7 @@ class SCM_Graph_Manager {
     private $classifier;
     private $id_manager;
     private $reference_rewriter;
+    private $template_resolver;
 
     /**
      * Errors and warnings collected during the last merge/build operation.
@@ -22,13 +23,14 @@ class SCM_Graph_Manager {
         'warnings' => array(),
     );
 
-    public function __construct( SCM_Schemas $schemas, SCM_Input_Normalizer $normalizer, SCM_Graph_Diagnostics $diagnostics, SCM_Structural_Classifier $classifier, SCM_Id_Manager $id_manager, SCM_Reference_Rewriter $reference_rewriter ) {
+    public function __construct( SCM_Schemas $schemas, SCM_Input_Normalizer $normalizer, SCM_Graph_Diagnostics $diagnostics, SCM_Structural_Classifier $classifier, SCM_Id_Manager $id_manager, SCM_Reference_Rewriter $reference_rewriter, SCM_Template_Resolver $template_resolver ) {
         $this->schemas             = $schemas;
         $this->normalizer          = $normalizer;
         $this->diagnostics         = $diagnostics;
         $this->classifier          = $classifier;
         $this->id_manager          = $id_manager;
         $this->reference_rewriter  = $reference_rewriter;
+        $this->template_resolver   = $template_resolver;
     }
 
     // ── Public API ──────────────────────────────────────────────────────────
@@ -51,9 +53,27 @@ class SCM_Graph_Manager {
         $nodes    = array();
         $context  = $this->build_context( $rule, $settings );
 
+        // Runtime WP context for template resolution — built lazily on first use,
+        // and only when running in a real frontend request (not admin, not tests).
+        $wp_context          = null;
+        $wp_context_resolved = false;
+
         foreach ( $schemas as $schema ) {
+            $schema_json = $schema['schema_json'];
+
+            // Resolve template placeholders before normalization.
+            if ( $this->template_resolver->has_placeholders( $schema_json ) ) {
+                if ( ! $wp_context_resolved ) {
+                    $wp_context_resolved = true;
+                    $wp_context          = $this->build_runtime_wp_context();
+                }
+                if ( null !== $wp_context ) {
+                    $schema_json = $this->template_resolver->resolve( $schema_json, $wp_context );
+                }
+            }
+
             $normalized = $this->normalizer->normalize_schema_json(
-                $schema['schema_json'],
+                $schema_json,
                 ! empty( $settings['strip_empty_values'] )
             );
 
@@ -303,6 +323,30 @@ class SCM_Graph_Manager {
     }
 
     // ── Private helpers ─────────────────────────────────────────────────────
+
+    /**
+     * Build a WP request context for use by the template resolver.
+     *
+     * Returns null when:
+     *  - Running in admin context (preserve raw tokens in preview).
+     *  - Running in a test environment (WP query functions not available).
+     *
+     * Called lazily — only when at least one schema contains a '{{' token.
+     *
+     * @return SCM_Request_Context|null
+     */
+    private function build_runtime_wp_context() {
+        // Guard: test environments don't define WP query functions.
+        if ( ! function_exists( 'is_front_page' ) ) {
+            return null;
+        }
+        // Guard: admin requests shouldn't resolve placeholders — the preview
+        // must display raw '{{token}}' text, not silently empty strings.
+        if ( function_exists( 'is_admin' ) && is_admin() ) {
+            return null;
+        }
+        return SCM_Request_Context::get_cached();
+    }
 
     private function reset_notices() {
         $this->last_merge_notices = array(
