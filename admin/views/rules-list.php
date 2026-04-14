@@ -7,6 +7,9 @@
     <?php if ( ! empty( $_GET['deleted'] ) ) : ?>
         <div class="notice notice-success"><p><?php esc_html_e( 'Rule deleted.', 'schema-control-manager' ); ?></p></div>
     <?php endif; ?>
+    <?php if ( ! empty( $_GET['duplicated'] ) ) : ?>
+        <div class="notice notice-success"><p><?php esc_html_e( 'Rule duplicated. The copy is inactive — review it and activate when ready.', 'schema-control-manager' ); ?></p></div>
+    <?php endif; ?>
 
     <?php if ( ! empty( $orphan_count ) ) : ?>
         <div class="notice notice-warning">
@@ -75,6 +78,7 @@
                         <td><?php echo esc_html( $rule['updated_at'] ); ?></td>
                         <td>
                             <a class="button button-small" href="<?php echo esc_url( admin_url( 'admin.php?page=scm_rule_edit&rule_id=' . (int) $rule['id'] ) ); ?>"><?php esc_html_e( 'Edit', 'schema-control-manager' ); ?></a>
+                            <a class="button button-small" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=scm_rules&action=duplicate_rule&rule_id=' . (int) $rule['id'] ), 'scm_duplicate_rule_' . (int) $rule['id'] ) ); ?>"><?php esc_html_e( 'Duplicate', 'schema-control-manager' ); ?></a>
                             <a class="button button-small button-link-delete" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=scm_rules&scm_delete_rule=' . (int) $rule['id'] ), 'scm_delete_rule_' . (int) $rule['id'] ) ); ?>"><?php esc_html_e( 'Delete', 'schema-control-manager' ); ?></a>
                         </td>
                     </tr>

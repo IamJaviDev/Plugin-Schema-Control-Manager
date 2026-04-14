@@ -152,6 +152,48 @@ class SCM_Admin {
             exit;
         }
 
+        if ( isset( $_GET['action'], $_GET['rule_id'] ) && 'duplicate_rule' === $_GET['action'] ) {
+            $rule_id = (int) $_GET['rule_id'];
+            check_admin_referer( 'scm_duplicate_rule_' . $rule_id );
+
+            $original = $this->rules->get( $rule_id );
+            if ( $original ) {
+                $original['replaced_types'] = is_array( $original['replaced_types'] )
+                    ? $original['replaced_types']
+                    : ( json_decode( $original['replaced_types'], true ) ?: array() );
+
+                $base_label = preg_replace( '/ \(Copy\)$/', '', $original['label'] );
+
+                $new_rule_id = $this->rules->create( array(
+                    'label'          => $base_label . ' (Copy)',
+                    'target_type'    => $original['target_type'],
+                    'target_value'   => $original['target_value'],
+                    'mode'           => $original['mode'],
+                    'replaced_types' => $original['replaced_types'],
+                    'priority'       => $original['priority'],
+                    'is_active'      => 0,
+                ) );
+
+                foreach ( $this->schemas->get_by_rule( $rule_id ) as $schema ) {
+                    $this->schemas->create( array(
+                        'rule_id'       => $new_rule_id,
+                        'label'         => $schema['label'],
+                        'schema_type'   => $schema['schema_type'],
+                        'schema_source' => $schema['schema_source'],
+                        'schema_json'   => $schema['schema_json'],
+                        'priority'      => $schema['priority'],
+                        'is_active'     => $schema['is_active'],
+                    ) );
+                }
+
+                wp_safe_redirect( admin_url( 'admin.php?page=scm_rule_edit&rule_id=' . $new_rule_id . '&duplicated=1' ) );
+                exit;
+            }
+
+            wp_safe_redirect( admin_url( 'admin.php?page=scm_rules' ) );
+            exit;
+        }
+
         if ( isset( $_GET['scm_delete_rule'], $_GET['_wpnonce'] ) ) {
             $id = (int) $_GET['scm_delete_rule'];
             if ( wp_verify_nonce( sanitize_key( $_GET['_wpnonce'] ), 'scm_delete_rule_' . $id ) ) {

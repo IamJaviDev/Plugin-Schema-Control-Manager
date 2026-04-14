@@ -3,6 +3,7 @@
     <h1><?php echo $rule['id'] ? esc_html__( 'Edit Rule', 'schema-control-manager' ) : esc_html__( 'Add Rule', 'schema-control-manager' ); ?></h1>
 
     <?php if ( ! empty( $_GET['updated'] ) ) : ?><div class="notice notice-success"><p><?php esc_html_e( 'Rule saved.', 'schema-control-manager' ); ?></p></div><?php endif; ?>
+    <?php if ( ! empty( $_GET['duplicated'] ) ) : ?><div class="notice notice-success"><p><?php esc_html_e( 'Rule duplicated successfully. This copy is inactive — activate it when ready.', 'schema-control-manager' ); ?></p></div><?php endif; ?>
     <?php if ( ! empty( $_GET['schema_updated'] ) ) : ?>
     <div class="notice notice-success"><p>
         <?php
