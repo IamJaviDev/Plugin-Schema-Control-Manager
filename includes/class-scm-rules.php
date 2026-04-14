@@ -217,7 +217,14 @@ class SCM_Rules {
                     && $ctx->term_slug === $parts[1];
 
             case 'exact_url':
-                return untrailingslashit( $ctx->current_url ) === untrailingslashit( $rule['target_value'] );
+                $target = $rule['target_value'];
+                if ( 0 === strpos( $target, 'http://' ) || 0 === strpos( $target, 'https://' ) ) {
+                    // Absolute URL: compare against the full normalised current URL.
+                    return untrailingslashit( $ctx->current_url ) === untrailingslashit( $target );
+                }
+                // Relative path: strip leading/trailing slashes from the stored value
+                // and compare against ctx->request_path, which is already normalised.
+                return trim( $target, '/' ) === $ctx->request_path;
 
             case 'exact_slug':
                 if ( '' !== $ctx->queried_slug ) {

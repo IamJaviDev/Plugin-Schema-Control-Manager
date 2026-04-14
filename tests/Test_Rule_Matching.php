@@ -327,4 +327,63 @@ class Test_Rule_Matching extends TestCase {
         // No colon → malformed, should always return false.
         $this->assertFalse( $rules->matches_context( $this->make_match_rule( 'taxonomy_term', 'genrefiction' ), $ctx ) );
     }
+
+    // ── exact_url ─────────────────────────────────────────────────────────────
+
+    public function test_exact_url_matches_absolute_url(): void {
+        $rules = $this->make_rules();
+        $ctx   = SCM_Request_Context::from_array( array(
+            'current_url' => 'https://example.com/info/talleres/alicante',
+        ) );
+        $this->assertTrue( $rules->matches_context(
+            $this->make_match_rule( 'exact_url', 'https://example.com/info/talleres/alicante/' ),
+            $ctx
+        ) );
+    }
+
+    public function test_exact_url_matches_relative_path_with_leading_slash(): void {
+        $rules = $this->make_rules();
+        $ctx   = SCM_Request_Context::from_array( array(
+            'request_path' => 'info/talleres/alicante',
+        ) );
+        $this->assertTrue( $rules->matches_context(
+            $this->make_match_rule( 'exact_url', '/info/talleres/alicante/' ),
+            $ctx
+        ) );
+    }
+
+    public function test_exact_url_matches_relative_path_without_leading_slash(): void {
+        $rules = $this->make_rules();
+        $ctx   = SCM_Request_Context::from_array( array(
+            'request_path' => 'info/talleres/alicante',
+        ) );
+        $this->assertTrue( $rules->matches_context(
+            $this->make_match_rule( 'exact_url', 'info/talleres/alicante' ),
+            $ctx
+        ) );
+    }
+
+    public function test_exact_url_relative_ignores_trailing_slash_differences(): void {
+        $rules = $this->make_rules();
+        // request_path has no trailing slash (normalised by from_wp).
+        $ctx   = SCM_Request_Context::from_array( array(
+            'request_path' => 'info/talleres/alicante',
+        ) );
+        // target_value stored with trailing slash — must still match.
+        $this->assertTrue( $rules->matches_context(
+            $this->make_match_rule( 'exact_url', 'info/talleres/alicante/' ),
+            $ctx
+        ) );
+    }
+
+    public function test_exact_url_relative_does_not_match_different_path(): void {
+        $rules = $this->make_rules();
+        $ctx   = SCM_Request_Context::from_array( array(
+            'request_path' => 'info/talleres/madrid',
+        ) );
+        $this->assertFalse( $rules->matches_context(
+            $this->make_match_rule( 'exact_url', '/info/talleres/alicante/' ),
+            $ctx
+        ) );
+    }
 }
