@@ -105,11 +105,20 @@ class SCM_Request_Context {
     /** @var string Full URL of the featured image for the current singular post. */
     public $featured_image_url = '';
 
+    /** @var string Alt text of the featured image for the current singular post. */
+    public $featured_image_alt = '';
+
     /** @var string Published date of the current singular post in W3C/ISO 8601 format. */
     public $post_date = '';
 
     /** @var string Last-modified date of the current singular post in W3C/ISO 8601 format. */
     public $post_modified_date = '';
+
+    /** @var string Email address of the post author (singular) or queried author (author archive). */
+    public $author_email = '';
+
+    /** @var string Archive URL for the current CPT archive page. */
+    public $archive_post_type_url = '';
 
     // ── Static context cache ──────────────────────────────────────────────────
 
@@ -194,6 +203,10 @@ class SCM_Request_Context {
             if ( '' !== $ctx->archive_post_type ) {
                 $pto = get_post_type_object( $ctx->archive_post_type );
                 $ctx->archive_post_type_label = is_object( $pto ) ? (string) ( $pto->labels->singular_name ?? $pto->label ?? '' ) : '';
+                if ( function_exists( 'get_post_type_archive_link' ) ) {
+                    $archive_link = get_post_type_archive_link( $ctx->archive_post_type );
+                    $ctx->archive_post_type_url = $archive_link ? (string) $archive_link : '';
+                }
             }
         }
 
@@ -226,21 +239,43 @@ class SCM_Request_Context {
 
         // ── Template placeholder fields ───────────────────────────────────────
 
-        // Post placeholders (singular pages only).
-        if ( $ctx->is_singular && is_object( $queried ) ) {
-            $ctx->post_title   = (string) ( $queried->post_title ?? '' );
-            $ctx->post_excerpt = wp_strip_all_tags( $queried->post_excerpt ?? '' );
-        }
         if ( $ctx->post_id > 0 ) {
+            // Title and excerpt — use explicit-ID WP functions so context is correct
+            // at 'wp' action priority 1, before setup_postdata() or the global $post
+            // are guaranteed to reflect the queried singular post.
+            if ( $ctx->is_singular ) {
+                $ctx->post_title = function_exists( 'get_the_title' )
+                    ? (string) get_the_title( $ctx->post_id )
+                    : (string) ( $queried->post_title ?? '' );
+                $ctx->post_excerpt = function_exists( 'get_the_excerpt' )
+                    ? wp_strip_all_tags( (string) get_the_excerpt( $ctx->post_id ) )
+                    : wp_strip_all_tags( $queried->post_excerpt ?? '' );
+            }
+
             $permalink     = get_permalink( $ctx->post_id );
             $ctx->post_url = $permalink ? (string) $permalink : '';
 
-            // Featured image URL.
+            // Featured image URL and alt text.
             if ( function_exists( 'get_post_thumbnail_id' ) && function_exists( 'wp_get_attachment_image_url' ) ) {
                 $thumb_id = get_post_thumbnail_id( $ctx->post_id );
                 if ( $thumb_id ) {
                     $img_url = wp_get_attachment_image_url( $thumb_id, 'full' );
                     $ctx->featured_image_url = $img_url ? (string) $img_url : '';
+                    $alt = get_post_meta( $thumb_id, '_wp_attachment_image_alt', true );
+                    $ctx->featured_image_alt = is_string( $alt ) ? $alt : '';
+                }
+            }
+
+            // Post author name and email (singular) — fetched via get_userdata() so
+            // values come from the object cache, not global post state.
+            if ( $ctx->is_singular && is_object( $queried ) && isset( $queried->post_author ) ) {
+                $author_id = (int) $queried->post_author;
+                if ( $author_id > 0 && function_exists( 'get_userdata' ) ) {
+                    $user_data = get_userdata( $author_id );
+                    if ( $user_data ) {
+                        $ctx->author_name  = (string) ( $user_data->display_name ?? '' );
+                        $ctx->author_email = isset( $user_data->user_email ) ? (string) $user_data->user_email : '';
+                    }
                 }
             }
 
@@ -266,8 +301,9 @@ class SCM_Request_Context {
 
         // Author placeholders.
         if ( $ctx->is_author && is_object( $queried ) ) {
-            $ctx->author_name = (string) ( $queried->display_name ?? '' );
-            $ctx->author_slug = $ctx->author_nicename;
+            $ctx->author_name  = (string) ( $queried->display_name ?? '' );
+            $ctx->author_slug  = $ctx->author_nicename;
+            $ctx->author_email = isset( $queried->user_email ) ? (string) $queried->user_email : '';
         }
 
         return $ctx;

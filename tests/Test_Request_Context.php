@@ -157,6 +157,105 @@ class Test_Request_Context extends TestCase {
         $this->assertSame( 'category',  $ctx->queried_taxonomy );
     }
 
+    // ── Singular placeholder fields ───────────────────────────────────────────
+
+    /**
+     * Build a minimal WP_Post-like stdClass for a singular page.
+     */
+    private function make_post( int $id, int $author_id = 0 ): stdClass {
+        $post              = new stdClass();
+        $post->ID          = $id;
+        $post->post_type   = 'post';
+        $post->post_name   = 'test-post-' . $id;
+        $post->post_author = $author_id;
+        return $post;
+    }
+
+    public function test_singular_post_sets_post_title(): void {
+        $GLOBALS['scm_test_wp_query'] = array(
+            'is_singular'    => true,
+            'queried_object' => $this->make_post( 10 ),
+            'post_title'     => array( 10 => 'Mi Artículo de Prueba' ),
+        );
+
+        $ctx = SCM_Request_Context::from_wp();
+
+        $this->assertSame( 'Mi Artículo de Prueba', $ctx->post_title );
+    }
+
+    public function test_singular_post_sets_post_url(): void {
+        $GLOBALS['scm_test_wp_query'] = array(
+            'is_singular'    => true,
+            'queried_object' => $this->make_post( 11 ),
+            'post_title'     => array( 11 => 'Article' ),
+            'permalink'      => 'https://example.com/mi-articulo',
+        );
+
+        $ctx = SCM_Request_Context::from_wp();
+
+        $this->assertSame( 'https://example.com/mi-articulo', $ctx->post_url );
+    }
+
+    public function test_singular_post_sets_post_date(): void {
+        $GLOBALS['scm_test_wp_query'] = array(
+            'is_singular'    => true,
+            'queried_object' => $this->make_post( 12 ),
+            'post_title'     => array( 12 => 'Article' ),
+            'post_time'      => array( 12 => '2024-06-15T10:30:00+00:00' ),
+        );
+
+        $ctx = SCM_Request_Context::from_wp();
+
+        $this->assertSame( '2024-06-15T10:30:00+00:00', $ctx->post_date );
+    }
+
+    public function test_singular_post_sets_post_modified_date(): void {
+        $GLOBALS['scm_test_wp_query'] = array(
+            'is_singular'    => true,
+            'queried_object' => $this->make_post( 13 ),
+            'post_title'     => array( 13 => 'Article' ),
+            'post_modified_time' => array( 13 => '2025-01-20T08:00:00+00:00' ),
+        );
+
+        $ctx = SCM_Request_Context::from_wp();
+
+        $this->assertSame( '2025-01-20T08:00:00+00:00', $ctx->post_modified_date );
+    }
+
+    public function test_singular_post_sets_author_name_and_email(): void {
+        $user               = new stdClass();
+        $user->display_name = 'Don Javier';
+        $user->user_email   = 'javier@example.com';
+
+        $GLOBALS['scm_test_wp_query'] = array(
+            'is_singular'    => true,
+            'queried_object' => $this->make_post( 14, 5 ),
+            'post_title'     => array( 14 => 'Article' ),
+            'userdata'       => array( 5 => $user ),
+        );
+
+        $ctx = SCM_Request_Context::from_wp();
+
+        $this->assertSame( 'Don Javier',          $ctx->author_name );
+        $this->assertSame( 'javier@example.com',  $ctx->author_email );
+    }
+
+    public function test_singular_post_keeps_fields_empty_when_queried_object_invalid(): void {
+        // queried_object is null — post_id stays 0, no fields should be populated.
+        $GLOBALS['scm_test_wp_query'] = array(
+            'is_singular'    => true,
+            'queried_object' => null,
+        );
+
+        $ctx = SCM_Request_Context::from_wp();
+
+        $this->assertSame( '', $ctx->post_title );
+        $this->assertSame( '', $ctx->post_url );
+        $this->assertSame( '', $ctx->post_date );
+        $this->assertSame( '', $ctx->author_name );
+        $this->assertSame( '', $ctx->author_email );
+    }
+
     // ── 8. get_cached() falls back to from_wp() when prime() was never called ─
 
     public function test_get_cached_falls_back_to_from_wp_when_not_primed(): void {

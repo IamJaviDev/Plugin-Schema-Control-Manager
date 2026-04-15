@@ -276,4 +276,68 @@ class Test_Template_Resolver extends TestCase {
         $this->assertSame( '', $this->resolver->resolve_placeholder( 'post_date', $context ) );
         $this->assertSame( '', $this->resolver->resolve_placeholder( 'post_modified_date', $context ) );
     }
+
+    // ── New: author_email resolves on singular context ────────────────────────
+
+    public function test_author_email_resolves_on_singular_context(): void {
+        $context = SCM_Request_Context::from_array( array(
+            'author_email' => 'autor@example.com',
+        ) );
+
+        $json   = '{"email":"{{author_email}}"}';
+        $result = $this->resolver->resolve( $json, $context );
+
+        $this->assertSame( '{"email":"autor@example.com"}', $result );
+    }
+
+    // ── New: author_email resolves on author archive context ──────────────────
+
+    public function test_author_email_resolves_on_author_archive_context(): void {
+        $context = SCM_Request_Context::from_array( array(
+            'is_author'    => true,
+            'author_name'  => 'Don Javier',
+            'author_slug'  => 'don-javier',
+            'author_email' => 'javier@example.com',
+        ) );
+
+        $result = $this->resolver->resolve_placeholder( 'author_email', $context );
+
+        $this->assertSame( 'javier@example.com', $result );
+    }
+
+    // ── New: archive_post_type_url resolves on archive context ────────────────
+
+    public function test_archive_post_type_url_resolves_on_archive_context(): void {
+        $context = SCM_Request_Context::from_array( array(
+            'archive_post_type_url' => 'https://example.com/movies/',
+        ) );
+
+        $json   = '{"url":"{{archive_post_type_url}}"}';
+        $result = $this->resolver->resolve( $json, $context );
+
+        $this->assertSame( '{"url":"https://example.com/movies/"}', $result );
+    }
+
+    // ── New: featured_image_alt resolves when alt text exists ─────────────────
+
+    public function test_featured_image_alt_resolves_when_alt_exists(): void {
+        $context = SCM_Request_Context::from_array( array(
+            'featured_image_alt' => 'Un coche rojo en Madrid',
+        ) );
+
+        $json   = '{"description":"{{featured_image_alt}}"}';
+        $result = $this->resolver->resolve( $json, $context );
+
+        $this->assertSame( '{"description":"Un coche rojo en Madrid"}', $result );
+    }
+
+    // ── New: all three new placeholders return '' when unavailable ────────────
+
+    public function test_new_placeholders_return_empty_when_unavailable(): void {
+        $context = SCM_Request_Context::from_array( array() ); // nothing set
+
+        $this->assertSame( '', $this->resolver->resolve_placeholder( 'author_email', $context ) );
+        $this->assertSame( '', $this->resolver->resolve_placeholder( 'archive_post_type_url', $context ) );
+        $this->assertSame( '', $this->resolver->resolve_placeholder( 'featured_image_alt', $context ) );
+    }
 }

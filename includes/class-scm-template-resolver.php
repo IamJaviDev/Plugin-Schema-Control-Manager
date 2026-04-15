@@ -27,9 +27,12 @@ if ( ! defined( 'ABSPATH' ) ) {
  *   {{site_url}}            — site home URL (home_url('/'))
  *   {{archive_post_type}}   — post type slug on a CPT archive page
  *   {{archive_post_type_label}} — singular label of the CPT on an archive page
- *   {{featured_image_url}}  — full URL of the featured image for the current singular post
- *   {{post_date}}           — published date of the current singular post (W3C/ISO 8601)
- *   {{post_modified_date}}  — last-modified date of the current singular post (W3C/ISO 8601)
+ *   {{featured_image_url}}      — full URL of the featured image for the current singular post
+ *   {{featured_image_alt}}      — alt text of the featured image for the current singular post
+ *   {{post_date}}               — published date of the current singular post (W3C/ISO 8601)
+ *   {{post_modified_date}}      — last-modified date of the current singular post (W3C/ISO 8601)
+ *   {{author_email}}            — email of the post author (singular) or queried author (author archive)
+ *   {{archive_post_type_url}}   — archive URL for the current CPT archive page
  */
 class SCM_Template_Resolver {
 
@@ -139,10 +142,16 @@ class SCM_Template_Resolver {
                 return function_exists( 'home_url' ) ? (string) home_url( '/' ) : '';
             case 'featured_image_url':
                 return $context->featured_image_url;
+            case 'featured_image_alt':
+                return $context->featured_image_alt;
             case 'post_date':
                 return $context->post_date;
             case 'post_modified_date':
                 return $context->post_modified_date;
+            case 'author_email':
+                return $context->author_email;
+            case 'archive_post_type_url':
+                return $context->archive_post_type_url;
         }
 
         return '';
