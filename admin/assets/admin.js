@@ -59,12 +59,22 @@ function scmAdminInit() {
     }
   }
 
+  var targetHelpTexts = {
+    exact_slug:        'Use the exact slug/path without the domain, for example: dar-de-baja-un-coche or info/talleres/alicante',
+    exact_url:         'Use a full URL or a relative path, for example: https://example.com/page/ or /info/talleres/alicante/',
+    post_type:         'Use the post type slug, for example: post, page, talleres',
+    post_type_archive: 'Use the post type slug for the archive, for example: post or talleres',
+    category:          'Use the category slug, for example: noticias',
+    tag:               'Use the tag slug, for example: seo',
+    taxonomy_term:     'Use taxonomy:term-slug, for example: category:noticias or genero:accion',
+    author:            'Use the author slug, for example: javier'
+  };
+
   function updateTargetUi() {
     if (!targetType || !targetValueRow) return;
     const value = targetType.value;
 
     if (value === 'home' || value === 'front_page') {
-      targetValueRow.style.display = '';
       if (targetValue) targetValue.value = '';
       if (targetValue) targetValue.setAttribute('disabled', 'disabled');
       if (targetHelp) targetHelp.textContent = 'This target does not require a value.';
@@ -72,16 +82,7 @@ function scmAdminInit() {
     }
 
     if (targetValue) targetValue.removeAttribute('disabled');
-    targetValueRow.style.display = '';
-
-    if (!targetHelp) return;
-    if (value === 'author') {
-      targetHelp.textContent = 'Use the author user_nicename, for example: javier-perez';
-    } else if (value === 'exact_url') {
-      targetHelp.textContent = 'Use the full canonical URL, including protocol.';
-    } else {
-      targetHelp.textContent = 'Use the exact slug without the domain, for example: dar-de-baja-un-coche';
-    }
+    if (targetHelp) targetHelp.textContent = targetHelpTexts[value] || '';
   }
 
   function updateModeUi() {
