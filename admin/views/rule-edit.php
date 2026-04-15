@@ -432,36 +432,163 @@
                     <td>
                         <textarea class="large-text code scm-json-editor" rows="18" name="schema_json" id="schema_json" required><?php echo esc_textarea( $edit_schema['schema_json'] ); ?></textarea>
                         <p class="description"><?php esc_html_e( 'You can paste a full JSON-LD object, a list of nodes, or an object with @graph. The plugin normalizes to a final @context + @graph structure.', 'schema-control-manager' ); ?></p>
-                        <div class="scm-help-box scm-placeholder-help">
-                            <p><strong><?php esc_html_e( 'Available placeholders', 'schema-control-manager' ); ?></strong></p>
-                            <table class="scm-placeholder-table">
-                                <tbody>
-                                    <tr><td><code>{{post_title}}</code></td><td><?php esc_html_e( 'Title of the current post or page', 'schema-control-manager' ); ?></td></tr>
-                                    <tr><td><code>{{post_url}}</code></td><td><?php esc_html_e( 'Permalink of the current post or page', 'schema-control-manager' ); ?></td></tr>
-                                    <tr><td><code>{{post_excerpt}}</code></td><td><?php esc_html_e( 'Excerpt of the current post or page (tags stripped)', 'schema-control-manager' ); ?></td></tr>
-                                    <tr><td><code>{{post_id}}</code></td><td><?php esc_html_e( 'ID of the current post or page', 'schema-control-manager' ); ?></td></tr>
-                                    <tr><td><code>{{post_type}}</code></td><td><?php esc_html_e( 'Post type of the current singular object', 'schema-control-manager' ); ?></td></tr>
-                                    <tr><td><code>{{meta:FIELD_KEY}}</code></td><td><?php esc_html_e( 'Custom field value — replace FIELD_KEY with the meta key (e.g. {{meta:telefono}})', 'schema-control-manager' ); ?></td></tr>
-                                    <tr><td><code>{{term:TAXONOMY}}</code></td><td><?php esc_html_e( 'First term name for the post in a taxonomy (e.g. {{term:category}})', 'schema-control-manager' ); ?></td></tr>
-                                    <tr><td><code>{{queried_term_name}}</code></td><td><?php esc_html_e( 'Display name of the current term archive (category, tag, custom taxonomy)', 'schema-control-manager' ); ?></td></tr>
-                                    <tr><td><code>{{queried_term_slug}}</code></td><td><?php esc_html_e( 'Slug of the current term archive', 'schema-control-manager' ); ?></td></tr>
-                                    <tr><td><code>{{queried_taxonomy}}</code></td><td><?php esc_html_e( 'Taxonomy name of the current term archive', 'schema-control-manager' ); ?></td></tr>
-                                    <tr><td><code>{{author_name}}</code></td><td><?php esc_html_e( 'Display name on an author archive page', 'schema-control-manager' ); ?></td></tr>
-                                    <tr><td><code>{{author_slug}}</code></td><td><?php esc_html_e( 'Nicename (slug) on an author archive page', 'schema-control-manager' ); ?></td></tr>
-                                    <tr><td><code>{{site_name}}</code></td><td><?php esc_html_e( 'Site name (Settings → General → Site Title)', 'schema-control-manager' ); ?></td></tr>
-                                    <tr><td><code>{{site_url}}</code></td><td><?php esc_html_e( 'Site home URL', 'schema-control-manager' ); ?></td></tr>
-                                    <tr><td><code>{{archive_post_type}}</code></td><td><?php esc_html_e( 'Post type slug on a CPT archive page (e.g. movie)', 'schema-control-manager' ); ?></td></tr>
-                                    <tr><td><code>{{archive_post_type_label}}</code></td><td><?php esc_html_e( 'Singular label of the CPT on a CPT archive page (e.g. Movie)', 'schema-control-manager' ); ?></td></tr>
-                                    <tr><td><code>{{featured_image_url}}</code></td><td><?php esc_html_e( 'Full URL of the featured image for the current singular post', 'schema-control-manager' ); ?></td></tr>
-                                    <tr><td><code>{{featured_image_alt}}</code></td><td><?php esc_html_e( 'Alt text of the featured image for the current singular post', 'schema-control-manager' ); ?></td></tr>
-                                    <tr><td><code>{{post_date}}</code></td><td><?php esc_html_e( 'Published date of the current singular post (ISO 8601)', 'schema-control-manager' ); ?></td></tr>
-                                    <tr><td><code>{{post_modified_date}}</code></td><td><?php esc_html_e( 'Last-modified date of the current singular post (ISO 8601)', 'schema-control-manager' ); ?></td></tr>
-                                    <tr><td><code>{{author_email}}</code></td><td><?php esc_html_e( 'Email of the post author (singular) or queried author (author archive)', 'schema-control-manager' ); ?></td></tr>
-                                    <tr><td><code>{{archive_post_type_url}}</code></td><td><?php esc_html_e( 'Archive URL of the current CPT archive page', 'schema-control-manager' ); ?></td></tr>
-                                </tbody>
-                            </table>
-                            <p class="description"><?php esc_html_e( 'Unresolved placeholders are replaced with an empty string. Placeholders are only active at runtime — the preview above shows raw tokens.', 'schema-control-manager' ); ?></p>
+                        <style>
+                        .scm-var-inserter{position:relative;display:inline-block;margin:6px 0 4px}
+                        .scm-var-panel{position:absolute;top:calc(100% + 4px);left:0;z-index:9999;background:#fff;border:1px solid #c3c4c7;border-radius:4px;box-shadow:0 4px 14px rgba(0,0,0,.13);width:300px;max-height:400px;display:flex;flex-direction:column;overflow:hidden}
+                        .scm-var-panel[hidden]{display:none}
+                        .scm-var-search{width:100%;box-sizing:border-box;padding:8px 10px;border:0;border-bottom:1px solid #e1e1e1;font-size:13px;outline:none;background:#f6f7f7}
+                        .scm-var-groups{overflow-y:auto;flex:1;padding:4px 0}
+                        .scm-var-group{padding:0}
+                        .scm-var-group[hidden]{display:none}
+                        .scm-var-group-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#999;padding:8px 12px 2px}
+                        .scm-var-item{display:block;width:100%;text-align:left;background:none;border:none;padding:5px 12px;font-size:12px;font-family:monospace;color:#1d2327;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.5}
+                        .scm-var-item:hover,.scm-var-item:focus{background:#f0f6fc;color:#0073aa;outline:none}
+                        .scm-var-item[hidden]{display:none}
+                        .scm-var-no-results{padding:10px 12px;font-size:12px;color:#888;font-style:italic}
+                        </style>
+
+                        <div class="scm-var-inserter">
+                            <button type="button" class="button" id="scm-insert-var-btn"><?php esc_html_e( 'Insert Variable', 'schema-control-manager' ); ?></button>
+                            <div class="scm-var-panel" id="scm-var-panel" hidden>
+                                <input type="search" class="scm-var-search" id="scm-var-search" placeholder="<?php esc_attr_e( 'Search variable...', 'schema-control-manager' ); ?>" autocomplete="off">
+                                <div class="scm-var-groups" id="scm-var-groups">
+
+                                    <div class="scm-var-group">
+                                        <div class="scm-var-group-title"><?php esc_html_e( 'Post / Page', 'schema-control-manager' ); ?></div>
+                                        <button type="button" class="scm-var-item" data-token="{{post_title}}">{{post_title}}</button>
+                                        <button type="button" class="scm-var-item" data-token="{{post_url}}">{{post_url}}</button>
+                                        <button type="button" class="scm-var-item" data-token="{{post_excerpt}}">{{post_excerpt}}</button>
+                                        <button type="button" class="scm-var-item" data-token="{{post_id}}">{{post_id}}</button>
+                                        <button type="button" class="scm-var-item" data-token="{{post_type}}">{{post_type}}</button>
+                                        <button type="button" class="scm-var-item" data-token="{{featured_image_url}}">{{featured_image_url}}</button>
+                                        <button type="button" class="scm-var-item" data-token="{{featured_image_alt}}">{{featured_image_alt}}</button>
+                                        <button type="button" class="scm-var-item" data-token="{{post_date}}">{{post_date}}</button>
+                                        <button type="button" class="scm-var-item" data-token="{{post_modified_date}}">{{post_modified_date}}</button>
+                                    </div>
+
+                                    <div class="scm-var-group">
+                                        <div class="scm-var-group-title"><?php esc_html_e( 'Author', 'schema-control-manager' ); ?></div>
+                                        <button type="button" class="scm-var-item" data-token="{{author_name}}">{{author_name}}</button>
+                                        <button type="button" class="scm-var-item" data-token="{{author_slug}}">{{author_slug}}</button>
+                                        <button type="button" class="scm-var-item" data-token="{{author_email}}">{{author_email}}</button>
+                                    </div>
+
+                                    <div class="scm-var-group">
+                                        <div class="scm-var-group-title"><?php esc_html_e( 'Taxonomy', 'schema-control-manager' ); ?></div>
+                                        <button type="button" class="scm-var-item" data-token="{{queried_term_name}}">{{queried_term_name}}</button>
+                                        <button type="button" class="scm-var-item" data-token="{{queried_term_slug}}">{{queried_term_slug}}</button>
+                                        <button type="button" class="scm-var-item" data-token="{{queried_taxonomy}}">{{queried_taxonomy}}</button>
+                                        <button type="button" class="scm-var-item" data-token="{{term:TAXONOMY}}" data-prompt="term">{{term:TAXONOMY}}</button>
+                                    </div>
+
+                                    <div class="scm-var-group">
+                                        <div class="scm-var-group-title"><?php esc_html_e( 'Site', 'schema-control-manager' ); ?></div>
+                                        <button type="button" class="scm-var-item" data-token="{{site_name}}">{{site_name}}</button>
+                                        <button type="button" class="scm-var-item" data-token="{{site_url}}">{{site_url}}</button>
+                                    </div>
+
+                                    <div class="scm-var-group">
+                                        <div class="scm-var-group-title"><?php esc_html_e( 'Archives / CPT', 'schema-control-manager' ); ?></div>
+                                        <button type="button" class="scm-var-item" data-token="{{archive_post_type}}">{{archive_post_type}}</button>
+                                        <button type="button" class="scm-var-item" data-token="{{archive_post_type_label}}">{{archive_post_type_label}}</button>
+                                        <button type="button" class="scm-var-item" data-token="{{archive_post_type_url}}">{{archive_post_type_url}}</button>
+                                    </div>
+
+                                    <div class="scm-var-group">
+                                        <div class="scm-var-group-title"><?php esc_html_e( 'Custom Fields', 'schema-control-manager' ); ?></div>
+                                        <button type="button" class="scm-var-item" data-token="{{meta:FIELD_KEY}}" data-prompt="meta">{{meta:FIELD_KEY}}</button>
+                                    </div>
+
+                                    <p class="scm-var-no-results" id="scm-var-no-results" hidden><?php esc_html_e( 'No variables match.', 'schema-control-manager' ); ?></p>
+                                </div>
+                            </div>
                         </div>
+                        <p class="description">
+                            <?php esc_html_e( 'Unresolved placeholders are replaced with an empty string.', 'schema-control-manager' ); ?>
+                            <?php esc_html_e( 'Placeholders are resolved only at runtime — the preview shows raw tokens.', 'schema-control-manager' ); ?>
+                        </p>
+
+                        <script>
+                        (function () {
+                            var btn    = document.getElementById('scm-insert-var-btn');
+                            var panel  = document.getElementById('scm-var-panel');
+                            var search = document.getElementById('scm-var-search');
+                            var noRes  = document.getElementById('scm-var-no-results');
+                            var ta     = document.getElementById('schema_json');
+                            if (!btn || !panel || !ta) return;
+
+                            btn.addEventListener('click', function (e) {
+                                e.stopPropagation();
+                                var opening = panel.hidden;
+                                panel.hidden = !opening;
+                                if (opening) {
+                                    search.value = '';
+                                    filterVars('');
+                                    search.focus();
+                                }
+                            });
+
+                            document.addEventListener('click', function (e) {
+                                if (!panel.hidden && !panel.contains(e.target) && e.target !== btn) {
+                                    panel.hidden = true;
+                                }
+                            });
+
+                            document.addEventListener('keydown', function (e) {
+                                if (e.key === 'Escape' && !panel.hidden) {
+                                    panel.hidden = true;
+                                    btn.focus();
+                                }
+                            });
+
+                            search.addEventListener('input', function () {
+                                filterVars(this.value.toLowerCase().trim());
+                            });
+
+                            function filterVars(q) {
+                                var groups  = panel.querySelectorAll('.scm-var-group');
+                                var anyVis  = false;
+                                groups.forEach(function (group) {
+                                    var items    = group.querySelectorAll('.scm-var-item');
+                                    var groupVis = false;
+                                    items.forEach(function (item) {
+                                        var match = !q || item.getAttribute('data-token').toLowerCase().indexOf(q) !== -1;
+                                        item.hidden = !match;
+                                        if (match) { groupVis = true; anyVis = true; }
+                                    });
+                                    group.hidden = !groupVis;
+                                });
+                                if (noRes) noRes.hidden = anyVis || !q;
+                            }
+
+                            panel.addEventListener('click', function (e) {
+                                var item = e.target.closest('.scm-var-item');
+                                if (!item) return;
+                                var token  = item.getAttribute('data-token');
+                                var prompt = item.getAttribute('data-prompt');
+                                if (prompt === 'meta') {
+                                    var key = window.prompt('<?php echo esc_js( __( 'Enter the meta field key (e.g. telefono):', 'schema-control-manager' ) ); ?>', '');
+                                    if (key === null || key.trim() === '') return;
+                                    token = '{{meta:' + key.trim() + '}}';
+                                } else if (prompt === 'term') {
+                                    var tax = window.prompt('<?php echo esc_js( __( 'Enter the taxonomy name (e.g. category):', 'schema-control-manager' ) ); ?>', '');
+                                    if (tax === null || tax.trim() === '') return;
+                                    token = '{{term:' + tax.trim() + '}}';
+                                }
+                                insertAtCursor(ta, token);
+                                panel.hidden = true;
+                                ta.focus();
+                            });
+
+                            function insertAtCursor(el, text) {
+                                var start = el.selectionStart;
+                                var end   = el.selectionEnd;
+                                el.value  = el.value.slice(0, start) + text + el.value.slice(end);
+                                var pos   = start + text.length;
+                                el.setSelectionRange(pos, pos);
+                            }
+                        })();
+                        </script>
                         <p><button type="button" class="button" id="scm-validate-json">Validate JSON</button> <span id="scm-json-status"></span></p>
                     </td>
                 </tr>
