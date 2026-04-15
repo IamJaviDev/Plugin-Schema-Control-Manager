@@ -58,3 +58,16 @@
 /* Rule-level diagnostics notice */
 .scm-notice-rule-diag{padding:10px 14px}
 .scm-notice-rule-diag p{margin:.4em 0}
+
+/* ── Simulated Preview controls ─────────────────────────────────────────── */
+.scm-sim-context-notice{display:flex;align-items:flex-start;gap:6px;margin-bottom:14px;padding:8px 12px;background:#fff8e1;border:1px solid #f0c040;border-radius:4px;color:#7a5200;font-size:13px}
+.scm-sim-context-notice .dashicons{flex-shrink:0;margin-top:1px;font-size:16px;width:16px;height:16px}
+.scm-sim-preview-controls{display:flex;flex-direction:column;gap:8px;max-width:640px}
+.scm-sim-post-search{width:100%}
+#scm-sim-post-select{min-width:300px;width:100%}
+.scm-sim-match-status{font-size:13px;min-height:1.4em}
+.scm-match-yes{color:#008a20;font-weight:600}
+.scm-match-no{color:#b32d2e;font-weight:600}
+.scm-match-archive{color:#7a5200;font-weight:600}
+.scm-sim-btn-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.scm-sim-preview-status{font-size:13px;color:#646970}

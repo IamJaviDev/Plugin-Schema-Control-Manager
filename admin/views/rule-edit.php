@@ -388,6 +388,60 @@
     <?php endif; ?>
 
     <?php if ( $rule['id'] ) : ?>
+    <div class="scm-card scm-card-full scm-sim-preview-card">
+        <h2><?php esc_html_e( 'Preview (Simulated)', 'schema-control-manager' ); ?></h2>
+        <p class="description"><?php esc_html_e( 'Select a published post to simulate the request context and preview the resolved schema output for that post.', 'schema-control-manager' ); ?></p>
+
+        <?php if ( ! empty( $preview_context_notice ) ) : ?>
+        <p class="scm-sim-context-notice">
+            <span class="dashicons dashicons-info-outline" aria-hidden="true"></span>
+            <?php echo esc_html( $preview_context_notice ); ?>
+        </p>
+        <?php endif; ?>
+
+        <?php if ( empty( $preview_posts ) ) : ?>
+            <p><?php esc_html_e( 'No published posts found.', 'schema-control-manager' ); ?></p>
+        <?php else : ?>
+        <div class="scm-sim-preview-controls">
+            <input
+                type="text"
+                id="scm-sim-post-search"
+                class="regular-text scm-sim-post-search"
+                placeholder="<?php esc_attr_e( 'Filter by title, ID or slug\u2026', 'schema-control-manager' ); ?>"
+                autocomplete="off"
+            >
+            <select
+                id="scm-sim-post-select"
+                data-rule-target-type="<?php echo esc_attr( $rule['target_type'] ); ?>"
+                data-preselect="<?php echo esc_attr( $preview_preselect_id ); ?>">
+                <option value=""><?php esc_html_e( '— Select a post —', 'schema-control-manager' ); ?></option>
+                <?php foreach ( $preview_posts as $p ) :
+                    $p_matches = ! empty( $preview_posts_match_map[ $p->ID ] );
+                ?>
+                    <option
+                        value="<?php echo esc_attr( $p->ID ); ?>"
+                        data-title="<?php echo esc_attr( $p->post_title ); ?>"
+                        data-slug="<?php echo esc_attr( $p->post_name ); ?>"
+                        data-post-type="<?php echo esc_attr( $p->post_type ); ?>"
+                        data-matches="<?php echo $p_matches ? '1' : '0'; ?>"
+                        <?php selected( (int) $p->ID, $preview_preselect_id ); ?>>
+                        [<?php echo esc_html( $p->post_type ); ?>] <?php echo esc_html( $p->post_title ); ?> &middot; <?php echo esc_html( $p->post_name ); ?> &middot; ID:<?php echo esc_html( $p->ID ); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+            <div id="scm-sim-match-status" class="scm-sim-match-status" aria-live="polite"></div>
+            <div class="scm-sim-btn-row">
+                <button type="button" class="button" id="scm-sim-preview-btn"
+                    data-rule-id="<?php echo esc_attr( $rule['id'] ); ?>">
+                    <?php esc_html_e( 'Generate preview', 'schema-control-manager' ); ?>
+                </button>
+                <span class="scm-sim-preview-status" id="scm-sim-preview-status"></span>
+            </div>
+        </div>
+        <pre class="scm-preview scm-sim-preview-output" id="scm-sim-preview-output" hidden></pre>
+        <?php endif; ?>
+    </div>
+
     <div class="scm-card scm-card-full">
         <h2>
             <?php echo $edit_schema['id'] ? esc_html__( 'Edit Schema', 'schema-control-manager' ) : esc_html__( 'Add Schema', 'schema-control-manager' ); ?>

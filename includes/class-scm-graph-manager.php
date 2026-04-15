@@ -45,7 +45,15 @@ class SCM_Graph_Manager {
         return $this->last_merge_notices;
     }
 
-    public function get_custom_nodes_for_rule( $rule_id, $rule = null ) {
+    /**
+     * @param int                    $rule_id
+     * @param array|null             $rule
+     * @param SCM_Request_Context|null $context_override  When provided, used for
+     *   placeholder resolution instead of the live WP request context. Allows
+     *   admin simulated previews to resolve tokens against a chosen post.
+     * @return array
+     */
+    public function get_custom_nodes_for_rule( $rule_id, $rule = null, $context_override = null ) {
         $this->reset_notices();
 
         $schemas  = $this->schemas->get_active_by_rule( $rule_id );
@@ -53,10 +61,11 @@ class SCM_Graph_Manager {
         $nodes    = array();
         $context  = $this->build_context( $rule, $settings );
 
-        // Runtime WP context for template resolution — built lazily on first use,
-        // and only when running in a real frontend request (not admin, not tests).
-        $wp_context          = null;
-        $wp_context_resolved = false;
+        // Runtime WP context for template resolution.
+        // Pre-seeded with the override when provided; otherwise resolved lazily
+        // on first placeholder hit (and only on real frontend requests).
+        $wp_context          = $context_override;
+        $wp_context_resolved = null !== $context_override;
 
         foreach ( $schemas as $schema ) {
             $schema_json = $schema['schema_json'];

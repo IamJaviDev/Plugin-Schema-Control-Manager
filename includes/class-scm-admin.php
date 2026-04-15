@@ -22,6 +22,7 @@ class SCM_Admin {
         add_action( 'admin_menu', array( $this, 'register_menu' ) );
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
         add_action( 'admin_init', array( $this, 'handle_actions' ) );
+        add_action( 'wp_ajax_scm_generate_preview', array( $this, 'handle_ajax_generate_preview' ) );
     }
 
     public function register_menu() {
@@ -39,6 +40,10 @@ class SCM_Admin {
 
         wp_enqueue_style( 'scm-admin', SCM_PLUGIN_URL . 'admin/assets/admin.css', array(), SCM_VERSION );
         wp_enqueue_script( 'scm-admin', SCM_PLUGIN_URL . 'admin/assets/admin.js', array(), SCM_VERSION, true );
+        wp_localize_script( 'scm-admin', 'scmData', array(
+            'ajaxurl' => admin_url( 'admin-ajax.php' ),
+            'nonce'   => wp_create_nonce( 'scm_preview_nonce' ),
+        ) );
     }
 
     public function handle_actions() {
@@ -268,6 +273,79 @@ class SCM_Admin {
         }
     }
 
+    // ── AJAX: simulated preview ───────────────────────────────────────────────
+
+    public function handle_ajax_generate_preview() {
+        // Capture any stray output (debug notices, plugin hooks firing during
+        // admin_init) so it cannot corrupt the JSON response body.
+        ob_start();
+
+        // 'nonce' is the field name sent by the JS FormData payload.
+        check_ajax_referer( 'scm_preview_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            ob_end_clean();
+            wp_send_json_error( array( 'message' => __( 'You do not have permission to perform this action.', 'schema-control-manager' ) ), 403 );
+        }
+
+        $rule_id = isset( $_POST['rule_id'] ) ? (int) $_POST['rule_id'] : 0;
+        $post_id = isset( $_POST['post_id'] ) ? (int) $_POST['post_id'] : 0;
+
+        if ( $rule_id < 1 ) {
+            ob_end_clean();
+            wp_send_json_error( array( 'message' => __( 'Invalid rule ID.', 'schema-control-manager' ) ) );
+        }
+
+        if ( $post_id < 1 ) {
+            ob_end_clean();
+            wp_send_json_error( array( 'message' => __( 'Invalid post ID.', 'schema-control-manager' ) ) );
+        }
+
+        if ( ! get_post( $post_id ) ) {
+            ob_end_clean();
+            wp_send_json_error( array( 'message' => sprintf(
+                /* translators: %d: post ID */
+                __( 'Post #%d was not found.', 'schema-control-manager' ),
+                $post_id
+            ) ) );
+        }
+
+        $rule = $this->rules->get( $rule_id );
+        if ( ! $rule ) {
+            ob_end_clean();
+            wp_send_json_error( array( 'message' => sprintf(
+                /* translators: %d: rule ID */
+                __( 'Rule #%d was not found.', 'schema-control-manager' ),
+                $rule_id
+            ) ) );
+        }
+
+        $rule['replaced_types'] = is_array( $rule['replaced_types'] )
+            ? $rule['replaced_types']
+            : ( json_decode( $rule['replaced_types'] ?? '[]', true ) ?: array() );
+
+        $context = SCM_Request_Context::from_post_id( $post_id );
+        $nodes   = $this->graph_manager->get_custom_nodes_for_rule( $rule_id, $rule, $context );
+
+        $json = wp_json_encode(
+            array( '@context' => 'https://schema.org', '@graph' => $nodes ),
+            JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
+        );
+
+        if ( false === $json ) {
+            ob_end_clean();
+            wp_send_json_error( array( 'message' => __( 'Failed to encode schema output as JSON.', 'schema-control-manager' ) ) );
+        }
+
+        ob_end_clean();
+        wp_send_json_success( array(
+            'post_id'  => $post_id,
+            'rule_id'  => $rule_id,
+            'json'     => $json,
+            'is_empty' => empty( $nodes ),
+        ) );
+    }
+
     public function render_rules_page() {
         $search = sanitize_text_field( $_GET['search'] ?? '' );
         $rules  = $this->rules->get_all(
@@ -367,6 +445,231 @@ class SCM_Admin {
         $preview_payload = null;
         if ( $rule_id ) {
             $preview_payload = $this->graph_manager->get_preview_payload_for_rule( $rule_id, $rule );
+        }
+
+        // ── Posts for simulated preview (context-aware filtering) ────────────
+        $preview_posts           = array();
+        $preview_preselect_id    = 0;
+        $preview_context_notice  = '';
+        $preview_posts_match_map = array(); // post_id => bool
+
+        if ( $rule_id ) {
+            $target_type  = $rule['target_type'];
+            $target_value = (string) ( $rule['target_value'] ?? '' );
+
+            $base_args = array(
+                'post_status'    => 'publish',
+                'posts_per_page' => 200,
+                'orderby'        => 'title',
+                'order'          => 'ASC',
+                'no_found_rows'  => true,
+            );
+
+            switch ( $target_type ) {
+
+                case 'post_type':
+                    $pt            = sanitize_key( $target_value ) ?: 'post';
+                    $preview_posts = get_posts( array_merge( $base_args, array( 'post_type' => $pt ) ) );
+                    foreach ( $preview_posts as $p ) {
+                        $preview_posts_match_map[ $p->ID ] = ( $p->post_type === $pt );
+                    }
+                    break;
+
+                case 'post_type_archive':
+                    $pt            = sanitize_key( $target_value ) ?: 'post';
+                    $preview_posts = get_posts( array_merge( $base_args, array( 'post_type' => $pt ) ) );
+                    $preview_context_notice = __( 'This rule targets a CPT archive page. The preview simulates a singular post context — useful for template resolution, but the rule fires on the archive page, not on individual posts.', 'schema-control-manager' );
+                    foreach ( $preview_posts as $p ) {
+                        $preview_posts_match_map[ $p->ID ] = false;
+                    }
+                    break;
+
+                case 'category':
+                    $slug          = sanitize_text_field( $target_value );
+                    $preview_posts = get_posts( array_merge( $base_args, array(
+                        'post_type' => 'any',
+                        'tax_query' => array( array( 'taxonomy' => 'category', 'field' => 'slug', 'terms' => $slug ) ),
+                    ) ) );
+                    if ( empty( $preview_posts ) ) {
+                        $preview_posts = get_posts( array_merge( $base_args, array( 'post_type' => 'any' ) ) );
+                        $preview_context_notice = sprintf(
+                            /* translators: %s: category slug */
+                            __( 'No posts found in category "%s". Showing all posts.', 'schema-control-manager' ),
+                            $slug
+                        );
+                        foreach ( $preview_posts as $p ) {
+                            $preview_posts_match_map[ $p->ID ] = false;
+                        }
+                    } else {
+                        $preview_context_notice = __( 'This rule targets a category archive. The preview simulates a singular post context.', 'schema-control-manager' );
+                        foreach ( $preview_posts as $p ) {
+                            $preview_posts_match_map[ $p->ID ] = true;
+                        }
+                    }
+                    break;
+
+                case 'tag':
+                    $slug          = sanitize_text_field( $target_value );
+                    $preview_posts = get_posts( array_merge( $base_args, array(
+                        'post_type' => 'any',
+                        'tax_query' => array( array( 'taxonomy' => 'post_tag', 'field' => 'slug', 'terms' => $slug ) ),
+                    ) ) );
+                    if ( empty( $preview_posts ) ) {
+                        $preview_posts = get_posts( array_merge( $base_args, array( 'post_type' => 'any' ) ) );
+                        $preview_context_notice = sprintf(
+                            /* translators: %s: tag slug */
+                            __( 'No posts found with tag "%s". Showing all posts.', 'schema-control-manager' ),
+                            $slug
+                        );
+                        foreach ( $preview_posts as $p ) {
+                            $preview_posts_match_map[ $p->ID ] = false;
+                        }
+                    } else {
+                        $preview_context_notice = __( 'This rule targets a tag archive. The preview simulates a singular post context.', 'schema-control-manager' );
+                        foreach ( $preview_posts as $p ) {
+                            $preview_posts_match_map[ $p->ID ] = true;
+                        }
+                    }
+                    break;
+
+                case 'taxonomy_term':
+                    $parts     = explode( ':', $target_value, 2 );
+                    $taxonomy  = isset( $parts[0] ) ? sanitize_key( trim( $parts[0] ) ) : '';
+                    $term_slug = isset( $parts[1] ) ? sanitize_text_field( trim( $parts[1] ) ) : '';
+                    if ( $taxonomy && $term_slug ) {
+                        $preview_posts = get_posts( array_merge( $base_args, array(
+                            'post_type' => 'any',
+                            'tax_query' => array( array( 'taxonomy' => $taxonomy, 'field' => 'slug', 'terms' => $term_slug ) ),
+                        ) ) );
+                        $preview_context_notice = __( 'This rule targets a taxonomy term archive. The preview simulates a singular post context.', 'schema-control-manager' );
+                    }
+                    if ( empty( $preview_posts ) ) {
+                        $preview_posts = get_posts( array_merge( $base_args, array( 'post_type' => 'any' ) ) );
+                        if ( $taxonomy && $term_slug ) {
+                            $preview_context_notice = sprintf(
+                                /* translators: 1: taxonomy, 2: term slug */
+                                __( 'No posts found for %1$s:%2$s. Showing all posts.', 'schema-control-manager' ),
+                                $taxonomy,
+                                $term_slug
+                            );
+                        }
+                        foreach ( $preview_posts as $p ) {
+                            $preview_posts_match_map[ $p->ID ] = false;
+                        }
+                    } else {
+                        foreach ( $preview_posts as $p ) {
+                            $preview_posts_match_map[ $p->ID ] = true;
+                        }
+                    }
+                    break;
+
+                case 'exact_slug':
+                    $slug       = sanitize_text_field( $target_value );
+                    $slug_posts = get_posts( array(
+                        'name'           => $slug,
+                        'post_type'      => 'any',
+                        'post_status'    => 'publish',
+                        'posts_per_page' => 1,
+                        'no_found_rows'  => true,
+                    ) );
+                    if ( ! empty( $slug_posts ) ) {
+                        $preview_preselect_id = (int) $slug_posts[0]->ID;
+                        $preview_posts        = $slug_posts;
+                        $preview_posts_match_map[ $slug_posts[0]->ID ] = true;
+                    } else {
+                        $preview_posts = get_posts( array_merge( $base_args, array( 'post_type' => 'any' ) ) );
+                        $preview_context_notice = sprintf(
+                            /* translators: %s: slug */
+                            __( 'No published post found with slug "%s". Showing all posts.', 'schema-control-manager' ),
+                            $slug
+                        );
+                        foreach ( $preview_posts as $p ) {
+                            $preview_posts_match_map[ $p->ID ] = ( $p->post_name === $slug );
+                        }
+                    }
+                    break;
+
+                case 'exact_url':
+                    $resolved_id = function_exists( 'url_to_postid' ) ? (int) url_to_postid( $target_value ) : 0;
+                    // Fallback: treat target as a relative path slug.
+                    if ( 0 === $resolved_id && '' !== $target_value ) {
+                        $path_slug  = sanitize_text_field( ltrim( $target_value, '/' ) );
+                        $slug_parts = explode( '/', $path_slug );
+                        $leaf_slug  = end( $slug_parts );
+                        if ( '' !== $leaf_slug ) {
+                            $slug_posts = get_posts( array(
+                                'name'           => $leaf_slug,
+                                'post_type'      => 'any',
+                                'post_status'    => 'publish',
+                                'posts_per_page' => 1,
+                                'no_found_rows'  => true,
+                            ) );
+                            if ( ! empty( $slug_posts ) ) {
+                                $resolved_id = (int) $slug_posts[0]->ID;
+                            }
+                        }
+                    }
+                    if ( $resolved_id > 0 ) {
+                        $resolved_post = get_post( $resolved_id );
+                        if ( $resolved_post ) {
+                            $preview_preselect_id = $resolved_id;
+                            $preview_posts        = array( $resolved_post );
+                            $preview_posts_match_map[ $resolved_id ] = true;
+                            break;
+                        }
+                    }
+                    $preview_posts = get_posts( array_merge( $base_args, array( 'post_type' => 'any' ) ) );
+                    $preview_context_notice = __( 'Could not resolve the target URL to a published post. Showing all posts.', 'schema-control-manager' );
+                    foreach ( $preview_posts as $p ) {
+                        $preview_posts_match_map[ $p->ID ] = false;
+                    }
+                    break;
+
+                case 'author':
+                    $author = get_user_by( 'slug', sanitize_text_field( $target_value ) );
+                    if ( $author ) {
+                        $preview_posts = get_posts( array_merge( $base_args, array(
+                            'post_type' => 'any',
+                            'author'    => $author->ID,
+                        ) ) );
+                        $preview_context_notice = __( 'This rule targets an author archive. The preview simulates a singular post context.', 'schema-control-manager' );
+                    }
+                    if ( empty( $preview_posts ) ) {
+                        $preview_posts = get_posts( array_merge( $base_args, array( 'post_type' => 'any' ) ) );
+                        if ( $target_value ) {
+                            $preview_context_notice = sprintf(
+                                /* translators: %s: author slug */
+                                __( 'No posts found for author "%s". Showing all posts.', 'schema-control-manager' ),
+                                $target_value
+                            );
+                        }
+                        foreach ( $preview_posts as $p ) {
+                            $preview_posts_match_map[ $p->ID ] = false;
+                        }
+                    } else {
+                        $author_id = isset( $author->ID ) ? (int) $author->ID : 0;
+                        foreach ( $preview_posts as $p ) {
+                            $preview_posts_match_map[ $p->ID ] = ( $author_id > 0 && (int) $p->post_author === $author_id );
+                        }
+                    }
+                    break;
+
+                case 'home':
+                case 'front_page':
+                    $preview_context_notice = __( 'This rule targets the home/front page. The preview uses a singular post context — results are an approximation only.', 'schema-control-manager' );
+                    $preview_posts = get_posts( array_merge( $base_args, array( 'post_type' => 'any' ) ) );
+                    foreach ( $preview_posts as $p ) {
+                        $preview_posts_match_map[ $p->ID ] = false;
+                    }
+                    break;
+
+                default:
+                    $preview_posts = get_posts( array_merge( $base_args, array( 'post_type' => 'any' ) ) );
+                    foreach ( $preview_posts as $p ) {
+                        $preview_posts_match_map[ $p->ID ] = false;
+                    }
+                    break;
+            }
         }
 
         include SCM_PLUGIN_DIR . 'admin/views/rule-edit.php';

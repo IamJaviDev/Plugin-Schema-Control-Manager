@@ -122,6 +122,167 @@ function scmAdminInit() {
     mode.addEventListener('change', updateModeUi);
   }
   document.querySelectorAll('input[name="replaced_types[]"]').forEach((checkbox) => checkbox.addEventListener('change', updateModeUi));
+
+  // ── Simulated preview ────────────────────────────────────────────────────
+  var simBtn    = document.getElementById('scm-sim-preview-btn');
+  var simSelect = document.getElementById('scm-sim-post-select');
+  var simOutput = document.getElementById('scm-sim-preview-output');
+  var simStatus = document.getElementById('scm-sim-preview-status');
+  var simSearch = document.getElementById('scm-sim-post-search');
+  var simMatch  = document.getElementById('scm-sim-match-status');
+
+  // ── Preselect ─────────────────────────────────────────────────────────
+  if (simSelect) {
+    var preselect = simSelect.getAttribute('data-preselect');
+    if (preselect && preselect !== '0') {
+      simSelect.value = preselect;
+    }
+  }
+
+  // ── Match status ──────────────────────────────────────────────────────
+  var archiveTypes = ['post_type_archive', 'category', 'tag', 'taxonomy_term', 'author', 'home', 'front_page'];
+
+  function updateMatchStatus() {
+    if (!simSelect || !simMatch) return;
+    var opt = simSelect.options[simSelect.selectedIndex];
+    if (!opt || !opt.value) {
+      simMatch.textContent = '';
+      simMatch.className = 'scm-sim-match-status';
+      return;
+    }
+    var targetType = simSelect.getAttribute('data-rule-target-type') || '';
+    var isArchive  = archiveTypes.indexOf(targetType) !== -1;
+    var matches    = opt.getAttribute('data-matches');
+
+    if (isArchive) {
+      simMatch.textContent = '\u26a0 Archive rule \u2014 preview uses a singular post context.';
+      simMatch.className = 'scm-sim-match-status scm-match-archive';
+    } else if (matches === '1') {
+      simMatch.textContent = '\u2714 This post matches the rule.';
+      simMatch.className = 'scm-sim-match-status scm-match-yes';
+    } else {
+      simMatch.textContent = '\u26a0 This post does NOT match the rule.';
+      simMatch.className = 'scm-sim-match-status scm-match-no';
+    }
+  }
+
+  if (simSelect) {
+    updateMatchStatus();
+    simSelect.addEventListener('change', updateMatchStatus);
+  }
+
+  // ── Search / filter ───────────────────────────────────────────────────
+  // Snapshot all real options (non-empty value) so we can rebuild the list.
+  var simAllOptions = [];
+  if (simSearch && simSelect) {
+    Array.from(simSelect.options).forEach(function (opt) {
+      if (opt.value) {
+        simAllOptions.push({
+          el:   opt,
+          text: [
+            (opt.getAttribute('data-title') || ''),
+            (opt.getAttribute('data-slug')  || ''),
+            opt.value
+          ].join(' ').toLowerCase()
+        });
+      }
+    });
+
+    var searchTimer = null;
+    simSearch.addEventListener('input', function () {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(function () {
+        var query = simSearch.value.toLowerCase().trim();
+
+        // Remove all options except placeholder ("— Select a post —").
+        while (simSelect.options.length > 1) {
+          simSelect.remove(1);
+        }
+
+        // Re-append matching options.
+        simAllOptions.forEach(function (item) {
+          if (!query || item.text.indexOf(query) !== -1) {
+            simSelect.appendChild(item.el);
+          }
+        });
+
+        // Reset selection to placeholder if current value disappeared.
+        if (simSelect.value && !simSelect.querySelector('option[value="' + simSelect.value + '"]')) {
+          simSelect.value = '';
+        }
+        updateMatchStatus();
+      }, 180);
+    });
+  }
+
+  // ── Generate preview ──────────────────────────────────────────────────
+  if (simBtn && simSelect && simOutput) {
+    simBtn.addEventListener('click', function () {
+      var postId = simSelect.value;
+      var ruleId = simBtn.getAttribute('data-rule-id');
+
+      if (!postId) {
+        if (simStatus) simStatus.textContent = 'Select a post first.';
+        return;
+      }
+
+      var selectedOpt = simSelect.options[simSelect.selectedIndex];
+      var postMatches = selectedOpt ? selectedOpt.getAttribute('data-matches') === '1' : false;
+      var targetType  = simSelect.getAttribute('data-rule-target-type') || '';
+      var isArchive   = archiveTypes.indexOf(targetType) !== -1;
+
+      simBtn.disabled = true;
+      simOutput.hidden = true;
+      if (simStatus) simStatus.textContent = 'Generating\u2026';
+
+      var formData = new FormData();
+      formData.append('action',  'scm_generate_preview');
+      formData.append('nonce',   (typeof scmData !== 'undefined' ? scmData.nonce : ''));
+      formData.append('rule_id', ruleId);
+      formData.append('post_id', postId);
+
+      fetch(typeof scmData !== 'undefined' ? scmData.ajaxurl : ajaxurl, {
+        method: 'POST',
+        body: formData
+      })
+        .then(function (r) {
+          return r.text().then(function (text) {
+            try {
+              return JSON.parse(text);
+            } catch (e) {
+              throw new Error('Invalid server response');
+            }
+          });
+        })
+        .then(function (data) {
+          simBtn.disabled = false;
+          if (data.success) {
+            simOutput.textContent = data.data.json;
+            simOutput.hidden = false;
+            if (simStatus) {
+              if (data.data.is_empty) {
+                if (!isArchive && !postMatches) {
+                  simStatus.textContent = 'This post does not match the current rule.';
+                } else {
+                  simStatus.textContent = 'Schema produced no valid nodes. Check required properties.';
+                }
+              } else {
+                simStatus.textContent = '';
+              }
+            }
+          } else {
+            simOutput.hidden = true;
+            var msg = (data.data && data.data.message) ? data.data.message : 'Unexpected error occurred.';
+            if (simStatus) simStatus.textContent = 'Error: ' + msg;
+          }
+        })
+        .catch(function (err) {
+          simBtn.disabled = false;
+          simOutput.hidden = true;
+          if (simStatus) simStatus.textContent = 'Error: ' + err.message;
+        });
+    });
+  }
 }
 
 if (document.readyState === 'loading') {

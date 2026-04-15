@@ -310,6 +310,64 @@ class SCM_Request_Context {
     }
 
     /**
+     * Build a context from a real post ID — for admin simulated preview.
+     *
+     * Populates all singular placeholder fields using standard WP functions
+     * that work correctly in admin context. Does not depend on the global
+     * WP query or request state.
+     *
+     * @param int $post_id
+     * @return self
+     */
+    public static function from_post_id( int $post_id ): self {
+        $ctx  = new self();
+        $post = get_post( $post_id );
+
+        if ( ! $post ) {
+            return $ctx;
+        }
+
+        $ctx->is_singular  = true;
+        $ctx->post_type    = (string) $post->post_type;
+        $ctx->post_id      = (int) $post->ID;
+        $ctx->queried_slug = (string) $post->post_name;
+
+        $ctx->post_title   = (string) get_the_title( $post_id );
+        $ctx->post_excerpt = wp_strip_all_tags( (string) get_the_excerpt( $post ) );
+
+        $permalink     = get_permalink( $post_id );
+        $ctx->post_url = $permalink ? (string) $permalink : '';
+
+        // Featured image URL and alt text.
+        $thumb_id = (int) get_post_thumbnail_id( $post_id );
+        if ( $thumb_id > 0 ) {
+            $img_url = wp_get_attachment_image_url( $thumb_id, 'full' );
+            $ctx->featured_image_url = $img_url ? (string) $img_url : '';
+            $alt = get_post_meta( $thumb_id, '_wp_attachment_image_alt', true );
+            $ctx->featured_image_alt = is_string( $alt ) ? $alt : '';
+        }
+
+        // Author.
+        $author_id = (int) $post->post_author;
+        if ( $author_id > 0 ) {
+            $user_data = get_userdata( $author_id );
+            if ( $user_data ) {
+                $ctx->author_name  = (string) ( $user_data->display_name ?? '' );
+                $ctx->author_email = isset( $user_data->user_email ) ? (string) $user_data->user_email : '';
+            }
+        }
+
+        // Published and modified dates.
+        $date = get_post_time( DATE_W3C, true, $post_id );
+        $ctx->post_date = $date ? (string) $date : '';
+
+        $modified = get_post_modified_time( DATE_W3C, true, $post_id );
+        $ctx->post_modified_date = $modified ? (string) $modified : '';
+
+        return $ctx;
+    }
+
+    /**
      * Build a context from a plain array — for unit tests only.
      *
      * Keys must match the public property names. Unknown keys are silently
