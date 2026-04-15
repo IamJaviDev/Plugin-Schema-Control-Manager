@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function () {
+function scmAdminInit() {
   const editor = document.getElementById('schema_json');
   const preview = document.getElementById('scm-json-preview');
   const status = document.getElementById('scm-json-status');
@@ -63,11 +63,11 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!targetType || !targetValueRow) return;
     const value = targetType.value;
 
-    if (value === 'home') {
+    if (value === 'home' || value === 'front_page') {
       targetValueRow.style.display = '';
       if (targetValue) targetValue.value = '';
       if (targetValue) targetValue.setAttribute('disabled', 'disabled');
-      if (targetHelp) targetHelp.textContent = 'Not required for Home.';
+      if (targetHelp) targetHelp.textContent = 'This target does not require a value.';
       return;
     }
 
@@ -121,7 +121,13 @@ document.addEventListener('DOMContentLoaded', function () {
     mode.addEventListener('change', updateModeUi);
   }
   document.querySelectorAll('input[name="replaced_types[]"]').forEach((checkbox) => checkbox.addEventListener('change', updateModeUi));
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', scmAdminInit);
+} else {
+  scmAdminInit();
+}
 
 // ── Final Graph Preview ────────────────────────────────────────────────────
 (function scmPreviewInit() {
