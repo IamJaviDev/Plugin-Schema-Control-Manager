@@ -65,14 +65,16 @@ class SCM_Rules {
             array( '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%s', '%s' )
         );
 
-        return (int) $wpdb->insert_id;
+        $id = (int) $wpdb->insert_id;
+        do_action( 'scm_after_rule_create', $id );
+        return $id;
     }
 
     public function update( $id, $data ) {
         global $wpdb;
         $normalized = $this->normalize_rule_data( $data );
 
-        return $wpdb->update(
+        $result = $wpdb->update(
             $this->db->rules_table(),
             array(
                 'label'          => sanitize_text_field( $normalized['label'] ),
@@ -88,12 +90,16 @@ class SCM_Rules {
             array( '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%s' ),
             array( '%d' )
         );
+        do_action( 'scm_after_rule_update', (int) $id );
+        return $result;
     }
 
     public function delete( $id ) {
         global $wpdb;
         $wpdb->delete( $this->db->schemas_table(), array( 'rule_id' => (int) $id ), array( '%d' ) );
-        return $wpdb->delete( $this->db->rules_table(), array( 'id' => (int) $id ), array( '%d' ) );
+        $result = $wpdb->delete( $this->db->rules_table(), array( 'id' => (int) $id ), array( '%d' ) );
+        do_action( 'scm_after_rule_delete', (int) $id );
+        return $result;
     }
 
     public function get_matching_rule_for_request() {

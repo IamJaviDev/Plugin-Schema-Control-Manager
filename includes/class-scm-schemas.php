@@ -46,7 +46,9 @@ class SCM_Schemas {
             array( '%d', '%s', '%s', '%s', '%s', '%d', '%d', '%s', '%s' )
         );
 
-        return (int) $wpdb->insert_id;
+        $id = (int) $wpdb->insert_id;
+        do_action( 'scm_after_schema_create', $id, (int) $data['rule_id'] );
+        return $id;
     }
 
     public function update( $id, $data ) {
@@ -72,22 +74,25 @@ class SCM_Schemas {
             array( '%d' )
         );
 
+        do_action( 'scm_after_schema_update', (int) $id, (int) ( $data['rule_id'] ?? 0 ) );
         return true;
     }
 
     public function delete( $id ) {
         global $wpdb;
-        return $wpdb->delete( $this->db->schemas_table(), array( 'id' => (int) $id ), array( '%d' ) );
+        $result = $wpdb->delete( $this->db->schemas_table(), array( 'id' => (int) $id ), array( '%d' ) );
+        do_action( 'scm_after_schema_delete', (int) $id );
+        return $result;
     }
 
     public function get_active_by_rule( $rule_id ) {
-        return array_values(
-            array_filter(
-                $this->get_by_rule( $rule_id ),
-                static function( $schema ) {
-                    return ! empty( $schema['is_active'] );
-                }
-            )
+        global $wpdb;
+        return $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$this->db->schemas_table()} WHERE rule_id = %d AND is_active = 1 ORDER BY priority ASC, id ASC",
+                (int) $rule_id
+            ),
+            ARRAY_A
         );
     }
 

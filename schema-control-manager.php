@@ -38,6 +38,7 @@ require_once SCM_PLUGIN_DIR . 'includes/class-scm-request-context.php';
 require_once SCM_PLUGIN_DIR . 'includes/class-scm-template-resolver.php';
 require_once SCM_PLUGIN_DIR . 'includes/class-scm-rules.php';
 require_once SCM_PLUGIN_DIR . 'includes/class-scm-schemas.php';
+require_once SCM_PLUGIN_DIR . 'includes/class-scm-cache.php';
 require_once SCM_PLUGIN_DIR . 'includes/class-scm-graph-manager.php';
 require_once SCM_PLUGIN_DIR . 'includes/class-scm-aioseo.php';
 require_once SCM_PLUGIN_DIR . 'includes/class-scm-injector.php';
@@ -90,6 +91,9 @@ final class SCM_Plugin {
     /** @var SCM_Import_Export */
     public $import_export;
 
+    /** @var SCM_Cache */
+    public $cache;
+
     /** @var SCM_Admin */
     public $admin;
 
@@ -116,6 +120,8 @@ final class SCM_Plugin {
         $this->aioseo        = new SCM_AIOSEO( $this->rules, $this->graph_manager );
         $this->injector      = new SCM_Injector( $this->rules, $this->graph_manager );
         $this->import_export = new SCM_Import_Export( $this->rules, $this->schemas, $this->validator );
+        $this->cache         = new SCM_Cache( $this->rules, $this->schemas );
+        $this->cache->register_hooks();
 
         if ( is_admin() ) {
             $this->admin = new SCM_Admin( $this->rules, $this->schemas, $this->validator, $this->import_export, $this->graph_manager, $this->normalizer );
