@@ -39,7 +39,7 @@ class SCM_Graph_Diagnostics {
         // Empty graph – critical.
         $valid_nodes = array_values( array_filter( $nodes, 'is_array' ) );
         if ( empty( $valid_nodes ) ) {
-            $errors[] = __( 'Graph is empty: no valid nodes found. The final @graph output will be empty.', 'schema-control-manager' );
+            $errors[] = __( 'El grafo está vacío: no se encontraron nodos válidos. La salida final de @graph estará vacía.', 'schema-control-manager' );
             return array(
                 'errors'              => $errors,
                 'structural_warnings' => array(),
@@ -63,7 +63,7 @@ class SCM_Graph_Diagnostics {
             if ( ! $type_ok ) {
                 $errors[] = sprintf(
                     /* translators: %s: PHP type or literal description of the bad @type value */
-                    __( 'Node has an invalid or missing @type (got: %s). The node was skipped.', 'schema-control-manager' ),
+                    __( 'El nodo tiene un @type inválido o ausente (recibido: %s). Se omitió el nodo.', 'schema-control-manager' ),
                     is_null( $raw_type ) ? 'null (missing)' : gettype( $raw_type )
                 );
                 continue;
@@ -79,7 +79,7 @@ class SCM_Graph_Diagnostics {
                 if ( isset( $ids[ $id_key ] ) ) {
                     $errors[] = sprintf(
                         /* translators: %s: @id value */
-                        __( 'Duplicate @id detected: %s', 'schema-control-manager' ),
+                        __( '@id duplicado detectado: %s', 'schema-control-manager' ),
                         $node_id
                     );
                 }
@@ -93,7 +93,7 @@ class SCM_Graph_Diagnostics {
                     if ( $site_host && $host !== $site_host ) {
                         $structural_warnings[] = sprintf(
                             /* translators: 1: @id value, 2: foreign domain, 3: site domain */
-                            __( '@id "%1$s" belongs to domain "%2$s", but this site is "%3$s". This may indicate a placeholder or copied payload.', 'schema-control-manager' ),
+                            __( 'El @id "%1$s" pertenece al dominio "%2$s", pero este sitio es "%3$s". Esto puede indicar un placeholder o un payload copiado.', 'schema-control-manager' ),
                             $node_id,
                             $host,
                             $site_host
@@ -113,7 +113,7 @@ class SCM_Graph_Diagnostics {
                     if ( ! $node_id ) {
                         $structural_warnings[] = sprintf(
                             /* translators: %s: schema type */
-                            __( 'Structural node "%s" has no @id. An @id will be auto-generated, but providing a stable one is recommended.', 'schema-control-manager' ),
+                            __( 'El nodo estructural "%s" no tiene @id. Se generará uno automáticamente, pero se recomienda proporcionar uno estable.', 'schema-control-manager' ),
                             $type
                         );
                     }
@@ -122,7 +122,7 @@ class SCM_Graph_Diagnostics {
                     if ( 'aioseo_plus_custom' === $mode ) {
                         $structural_warnings[] = sprintf(
                             /* translators: %s: schema type */
-                            __( 'Structural type "%s" in AIOSEO + Custom mode will be silently filtered out at runtime. Use "Override selected types" mode to replace structural nodes.', 'schema-control-manager' ),
+                            __( 'El tipo estructural "%s" en el modo AIOSEO + personalizado será filtrado silenciosamente en tiempo de ejecución. Usa el modo "Reemplazar tipos seleccionados" para sustituir nodos estructurales.', 'schema-control-manager' ),
                             $type
                         );
                     }
@@ -138,7 +138,7 @@ class SCM_Graph_Diagnostics {
             if ( ! isset( $ids[ strtolower( $ref_id ) ] ) ) {
                 $errors[] = sprintf(
                     /* translators: %s: @id reference value */
-                    __( 'Broken reference: @id "%s" is referenced but not defined in this graph.', 'schema-control-manager' ),
+                    __( 'Referencia rota: el @id "%s" está referenciado pero no está definido en este grafo.', 'schema-control-manager' ),
                     $ref_id
                 );
             }
@@ -149,7 +149,7 @@ class SCM_Graph_Diagnostics {
             if ( ! empty( $seen_struct[ $conflict_type ] ) && count( array_unique( $seen_struct[ $conflict_type ] ) ) > 1 ) {
                 $structural_warnings[] = sprintf(
                     /* translators: %s: schema type */
-                    __( 'Multiple "%s" nodes detected with different @ids. This will likely cause conflicts.', 'schema-control-manager' ),
+                    __( 'Se detectaron múltiples nodos "%s" con @ids distintos. Esto probablemente causará conflictos.', 'schema-control-manager' ),
                     $conflict_type
                 );
             }
@@ -157,7 +157,7 @@ class SCM_Graph_Diagnostics {
 
         // ── Multi-domain warning (only when not already flagged per-node) ──
         if ( count( $domains ) > 1 ) {
-            $structural_warnings[] = __( 'Multiple domains found across @id values. This may indicate a mixed or copied payload.', 'schema-control-manager' );
+            $structural_warnings[] = __( 'Se encontraron múltiples dominios en los valores @id. Esto puede indicar un payload mezclado o copiado.', 'schema-control-manager' );
         }
 
         // ── Semantic: ProfilePage without mainEntity ───────────────────────
@@ -171,13 +171,13 @@ class SCM_Graph_Diagnostics {
                 }
             }
             if ( ! $has_main_entity ) {
-                $semantic_warnings[] = __( 'ProfilePage detected without a "mainEntity" property. It should reference a Person node via mainEntity.', 'schema-control-manager' );
+                $semantic_warnings[] = __( 'Se detectó un ProfilePage sin la propiedad "mainEntity". Debe referenciar un nodo Person mediante mainEntity.', 'schema-control-manager' );
             }
         }
 
         // ── Semantic: Person on non-author target ──────────────────────────
         if ( ! empty( $seen_struct['person'] ) && 'author' !== $target_type && '' !== $target_type ) {
-            $semantic_warnings[] = __( 'Person node found on a non-author target. Verify this is intentional — Person is typically a structural node on author pages.', 'schema-control-manager' );
+            $semantic_warnings[] = __( 'Se encontró un nodo Person en un objetivo que no es de autor. Verifica que sea intencional — Person es habitualmente un nodo estructural en páginas de autor.', 'schema-control-manager' );
         }
 
         // ── custom_only self-containment note ─────────────────────────────

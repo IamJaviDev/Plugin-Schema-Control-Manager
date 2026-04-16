@@ -15,10 +15,10 @@ function scmAdminInit() {
   const summaryOutput = document.getElementById('scm-summary-output');
 
   const modeDescriptions = {
-    aioseo_only: 'Uses only the schema graph from AIOSEO.',
-    aioseo_plus_custom: 'Keeps the AIOSEO graph and adds your custom nodes.',
-    custom_override_selected: 'Replaces selected types and rewires key references when possible.',
-    custom_only: 'Disables AIOSEO on this target and outputs only your custom graph.'
+    aioseo_only: 'Usa únicamente el grafo de schema de AIOSEO.',
+    aioseo_plus_custom: 'Mantiene el grafo de AIOSEO y añade tus nodos personalizados.',
+    custom_override_selected: 'Reemplaza los tipos seleccionados y reconecta referencias clave cuando es posible.',
+    custom_only: 'Desactiva AIOSEO en este objetivo y genera únicamente tu grafo personalizado.'
   };
 
   function normalizeForPreview(parsed) {
@@ -50,7 +50,7 @@ function scmAdminInit() {
     if (!editor || !status) return;
     try {
       const parsed = JSON.parse(editor.value);
-      status.textContent = 'Valid JSON';
+      status.textContent = 'JSON válido';
       status.style.color = '#008a20';
       preview.textContent = JSON.stringify(normalizeForPreview(parsed), null, 2);
     } catch (err) {
@@ -60,14 +60,14 @@ function scmAdminInit() {
   }
 
   var targetHelpTexts = {
-    exact_slug:        'Use the exact slug/path without the domain, for example: dar-de-baja-un-coche or info/talleres/alicante',
-    exact_url:         'Use a full URL or a relative path, for example: https://example.com/page/ or /info/talleres/alicante/',
-    post_type:         'Use the post type slug, for example: post, page, talleres',
-    post_type_archive: 'Use the post type slug for the archive, for example: post or talleres',
-    category:          'Use the category slug, for example: noticias',
-    tag:               'Use the tag slug, for example: seo',
-    taxonomy_term:     'Use taxonomy:term-slug, for example: category:noticias or genero:accion',
-    author:            'Use the author slug, for example: javier'
+    exact_slug:        'Usa el slug o ruta exacta sin el dominio, por ejemplo: dar-de-baja-un-coche o info/talleres/alicante',
+    exact_url:         'Usa una URL completa o una ruta relativa, por ejemplo: https://example.com/pagina/ o /info/talleres/alicante/',
+    post_type:         'Usa el slug del tipo de entrada, por ejemplo: post, page, talleres',
+    post_type_archive: 'Usa el slug del tipo de entrada para el archivo, por ejemplo: post o talleres',
+    category:          'Usa el slug de la categoría, por ejemplo: noticias',
+    tag:               'Usa el slug de la etiqueta, por ejemplo: seo',
+    taxonomy_term:     'Usa taxonomía:slug-del-término, por ejemplo: category:noticias o genero:accion',
+    author:            'Usa el slug del autor, por ejemplo: javier'
   };
 
   function updateTargetUi() {
@@ -77,7 +77,7 @@ function scmAdminInit() {
     if (value === 'home' || value === 'front_page') {
       if (targetValue) targetValue.value = '';
       if (targetValue) targetValue.setAttribute('disabled', 'disabled');
-      if (targetHelp) targetHelp.textContent = 'This target does not require a value.';
+      if (targetHelp) targetHelp.textContent = 'Este objetivo no requiere un valor.';
       return;
     }
 
@@ -95,10 +95,10 @@ function scmAdminInit() {
       modeHelp.textContent = modeDescriptions[currentMode] || '';
     }
     if (summaryAioseo) {
-      summaryAioseo.textContent = currentMode === 'custom_only' ? 'Disabled' : (currentMode === 'aioseo_only' ? 'Active only' : 'Active');
+      summaryAioseo.textContent = currentMode === 'custom_only' ? 'Desactivado' : (currentMode === 'aioseo_only' ? 'Solo activo' : 'Activo');
     }
     if (summaryOutput) {
-      summaryOutput.textContent = currentMode === 'custom_only' ? 'Only custom output' : (currentMode === 'aioseo_only' ? 'Only AIOSEO output' : (currentMode === 'custom_override_selected' ? 'AIOSEO filtered + custom' : 'AIOSEO + custom merge'));
+      summaryOutput.textContent = currentMode === 'custom_only' ? 'Solo salida personalizada' : (currentMode === 'aioseo_only' ? 'Solo salida AIOSEO' : (currentMode === 'custom_override_selected' ? 'AIOSEO filtrado + personalizado' : 'Combinación AIOSEO + personalizado'));
     }
     if (summaryReplacements) {
       const checked = Array.from(document.querySelectorAll('input[name="replaced_types[]"]:checked')).map((el) => el.value);
@@ -155,13 +155,13 @@ function scmAdminInit() {
     var matches    = opt.getAttribute('data-matches');
 
     if (isArchive) {
-      simMatch.textContent = '\u26a0 Archive rule \u2014 preview uses a singular post context.';
+      simMatch.textContent = '\u26a0 Regla de archivo \u2014 la vista previa usa un contexto de entrada singular.';
       simMatch.className = 'scm-sim-match-status scm-match-archive';
     } else if (matches === '1') {
-      simMatch.textContent = '\u2714 This post matches the rule.';
+      simMatch.textContent = '\u2714 Esta entrada coincide con la regla.';
       simMatch.className = 'scm-sim-match-status scm-match-yes';
     } else {
-      simMatch.textContent = '\u26a0 This post does NOT match the rule.';
+      simMatch.textContent = '\u26a0 Esta entrada NO coincide con la regla.';
       simMatch.className = 'scm-sim-match-status scm-match-no';
     }
   }
@@ -194,7 +194,7 @@ function scmAdminInit() {
       searchTimer = setTimeout(function () {
         var query = simSearch.value.toLowerCase().trim();
 
-        // Remove all options except placeholder ("— Select a post —").
+        // Remove all options except placeholder ("— Selecciona una entrada —").
         while (simSelect.options.length > 1) {
           simSelect.remove(1);
         }
@@ -222,7 +222,7 @@ function scmAdminInit() {
       var ruleId = simBtn.getAttribute('data-rule-id');
 
       if (!postId) {
-        if (simStatus) simStatus.textContent = 'Select a post first.';
+        if (simStatus) simStatus.textContent = 'Selecciona una entrada primero.';
         return;
       }
 
@@ -233,7 +233,7 @@ function scmAdminInit() {
 
       simBtn.disabled = true;
       simOutput.hidden = true;
-      if (simStatus) simStatus.textContent = 'Generating\u2026';
+      if (simStatus) simStatus.textContent = 'Generando\u2026';
 
       var formData = new FormData();
       formData.append('action',  'scm_generate_preview');
@@ -250,7 +250,7 @@ function scmAdminInit() {
             try {
               return JSON.parse(text);
             } catch (e) {
-              throw new Error('Invalid server response');
+              throw new Error('Respuesta del servidor inválida');
             }
           });
         })
@@ -262,9 +262,9 @@ function scmAdminInit() {
             if (simStatus) {
               if (data.data.is_empty) {
                 if (!isArchive && !postMatches) {
-                  simStatus.textContent = 'This post does not match the current rule.';
+                  simStatus.textContent = 'Esta entrada no coincide con la regla actual.';
                 } else {
-                  simStatus.textContent = 'Schema produced no valid nodes. Check required properties.';
+                  simStatus.textContent = 'El schema no produjo nodos válidos. Verifica las propiedades requeridas.';
                 }
               } else {
                 simStatus.textContent = '';
@@ -272,7 +272,7 @@ function scmAdminInit() {
             }
           } else {
             simOutput.hidden = true;
-            var msg = (data.data && data.data.message) ? data.data.message : 'Unexpected error occurred.';
+            var msg = (data.data && data.data.message) ? data.data.message : 'Ocurrió un error inesperado.';
             if (simStatus) simStatus.textContent = 'Error: ' + msg;
           }
         })

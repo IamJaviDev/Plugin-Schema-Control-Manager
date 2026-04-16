@@ -89,7 +89,7 @@ class SCM_Graph_Manager {
             if ( is_wp_error( $normalized ) ) {
                 $this->last_merge_notices['errors'][] = sprintf(
                     /* translators: 1: schema label, 2: error message */
-                    __( 'Schema "%1$s" failed to normalize: %2$s', 'schema-control-manager' ),
+                    __( 'El schema "%1$s" no pudo normalizarse: %2$s', 'schema-control-manager' ),
                     $schema['label'],
                     $normalized->get_error_message()
                 );
@@ -105,7 +105,7 @@ class SCM_Graph_Manager {
                 if ( null !== $type_error ) {
                     $this->last_merge_notices['errors'][] = sprintf(
                         /* translators: 1: schema label, 2: error message */
-                        __( 'Schema "%1$s" contains an invalid node: %2$s', 'schema-control-manager' ),
+                        __( 'El schema "%1$s" contiene un nodo inválido: %2$s', 'schema-control-manager' ),
                         $schema['label'],
                         $type_error
                     );
@@ -139,7 +139,7 @@ class SCM_Graph_Manager {
         if ( 'custom_only' === $mode ) {
             $result = $this->deduplicate_nodes( $custom_nodes );
             if ( empty( $result ) ) {
-                $this->last_merge_notices['errors'][] = __( 'custom_only mode: graph is empty. No active schemas produced valid nodes.', 'schema-control-manager' );
+                $this->last_merge_notices['errors'][] = __( 'Modo solo personalizado: el grafo está vacío. Ningún schema activo produjo nodos válidos.', 'schema-control-manager' );
             }
             return $result;
         }
@@ -148,7 +148,7 @@ class SCM_Graph_Manager {
             $custom_nodes = $this->filter_out_structural_nodes( $custom_nodes );
             $result       = $this->deduplicate_nodes( array_merge( $aioseo_graphs, $custom_nodes ) );
             if ( empty( $result ) ) {
-                $this->last_merge_notices['errors'][] = __( 'Graph is empty after merge (AIOSEO + Custom mode). No valid nodes were produced — check for @id conflicts, invalid nodes, or missing active schemas.', 'schema-control-manager' );
+                $this->last_merge_notices['errors'][] = __( 'El grafo está vacío tras la combinación (modo AIOSEO + personalizado). No se produjeron nodos válidos — verifica conflictos de @id, nodos inválidos o schemas activos ausentes.', 'schema-control-manager' );
             }
             return $result;
         }
@@ -188,7 +188,7 @@ class SCM_Graph_Manager {
         $result = $this->deduplicate_nodes( array_merge( $aioseo_graphs, $custom_nodes ) );
 
         if ( empty( $result ) ) {
-            $this->last_merge_notices['errors'][] = __( 'Graph is empty after merge (Override Selected mode). Check for @id conflicts, all nodes being filtered out, or missing active schemas.', 'schema-control-manager' );
+            $this->last_merge_notices['errors'][] = __( 'El grafo está vacío tras la combinación (modo Reemplazar seleccionados). Verifica conflictos de @id, nodos filtrados o schemas activos ausentes.', 'schema-control-manager' );
         }
 
         return $result;
@@ -269,23 +269,23 @@ class SCM_Graph_Manager {
         $changes = array();
         switch ( $mode ) {
             case 'aioseo_only':
-                $changes[] = __( 'Mode: AIOSEO Only — custom schemas are not active for this rule.', 'schema-control-manager' );
+                $changes[] = __( 'Modo: Solo AIOSEO — los schemas personalizados no están activos para esta regla.', 'schema-control-manager' );
                 break;
             case 'aioseo_plus_custom':
-                $changes[] = __( 'Mode: AIOSEO + Custom — custom nodes will be merged with AIOSEO output.', 'schema-control-manager' );
+                $changes[] = __( 'Modo: AIOSEO + personalizado — los nodos personalizados se combinarán con la salida de AIOSEO.', 'schema-control-manager' );
                 break;
             case 'custom_override_selected':
-                $changes[] = __( 'Mode: Override Selected — selected AIOSEO types will be removed and replaced by custom nodes.', 'schema-control-manager' );
+                $changes[] = __( 'Modo: Reemplazar seleccionados — los tipos AIOSEO seleccionados serán eliminados y sustituidos por nodos personalizados.', 'schema-control-manager' );
                 if ( ! empty( $replaced ) ) {
                     $changes[] = sprintf(
                         /* translators: %s: comma-separated list of schema types */
-                        __( 'Types to be replaced: %s', 'schema-control-manager' ),
+                        __( 'Tipos a reemplazar: %s', 'schema-control-manager' ),
                         implode( ', ', $replaced )
                     );
                 }
                 break;
             case 'custom_only':
-                $changes[] = __( 'Mode: Custom Only — AIOSEO output is disabled; only custom schemas will be injected.', 'schema-control-manager' );
+                $changes[] = __( 'Modo: Solo personalizado — la salida AIOSEO está desactivada; solo se inyectarán los schemas personalizados.', 'schema-control-manager' );
                 break;
         }
 
@@ -455,13 +455,13 @@ class SCM_Graph_Manager {
                 if ( 0 === count( $new_nodes ) ) {
                     $this->last_merge_notices['errors'][] = sprintf(
                         /* translators: %s: schema type */
-                        __( 'Override of "%s" failed: no custom node of this type was found in the saved schemas. The AIOSEO node was removed but nothing replaced it.', 'schema-control-manager' ),
+                        __( 'El reemplazo de "%s" falló: no se encontró ningún nodo personalizado de este tipo en los schemas guardados. El nodo AIOSEO fue eliminado pero no fue sustituido por nada.', 'schema-control-manager' ),
                         $type
                     );
                 } elseif ( count( $new_nodes ) > 1 ) {
                     $this->last_merge_notices['warnings'][] = sprintf(
                         /* translators: %s: schema type */
-                        __( 'Override of "%s": multiple custom nodes of this type found. Skipping automatic @id alignment — ensure the intended node carries the correct @id.', 'schema-control-manager' ),
+                        __( 'Reemplazo de "%s": se encontraron múltiples nodos personalizados de este tipo. Se omitió la alineación automática de @id — asegúrate de que el nodo correcto tenga el @id correspondiente.', 'schema-control-manager' ),
                         $type
                     );
                 } elseif ( 0 === count( $old_nodes ) ) {
@@ -470,14 +470,14 @@ class SCM_Graph_Manager {
                     // separately via extract_inline_structural_refs().
                     $this->last_merge_notices['warnings'][] = sprintf(
                         /* translators: %s: schema type */
-                        __( 'Override of "%s": no matching top-level AIOSEO node found to replace. The custom node will be inserted with its own @id.', 'schema-control-manager' ),
+                        __( 'Reemplazo de "%s": no se encontró ningún nodo AIOSEO de nivel superior que sustituir. El nodo personalizado se insertará con su propio @id.', 'schema-control-manager' ),
                         $type
                     );
                 } else {
                     // count(old) > 1 && count(new) === 1: ambiguous — cannot safely align.
                     $this->last_merge_notices['warnings'][] = sprintf(
                         /* translators: 1: count of removed AIOSEO nodes, 2: schema type */
-                        __( 'Override of "%2$s": %1$d AIOSEO nodes were removed but only 1 custom node was found. Automatic @id alignment was skipped — references to the removed nodes may be broken.', 'schema-control-manager' ),
+                        __( 'Reemplazo de "%2$s": se eliminaron %1$d nodos AIOSEO pero solo se encontró 1 nodo personalizado. Se omitió la alineación automática de @id — las referencias a los nodos eliminados pueden estar rotas.', 'schema-control-manager' ),
                         count( $old_nodes ),
                         $type
                     );

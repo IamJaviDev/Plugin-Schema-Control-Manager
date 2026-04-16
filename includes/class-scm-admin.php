@@ -128,7 +128,7 @@ class SCM_Admin {
                 $dangerous     = array_intersect( array( 'webpage', 'website', 'profilepage' ), $blocked_types );
                 $danger_notice = ! empty( $dangerous )
                     ? sprintf(
-                        ' ' . __( 'Types %s are especially dangerous as they overwrite AIOSEO\'s page structure.', 'schema-control-manager' ),
+                        ' ' . __( 'Los tipos %s son especialmente peligrosos ya que sobrescriben la estructura de página de AIOSEO.', 'schema-control-manager' ),
                         implode( ', ', array_map( 'ucfirst', $dangerous ) )
                     )
                     : '';
@@ -136,7 +136,7 @@ class SCM_Admin {
                     'unsafe_structural_addition',
                     sprintf(
                         /* translators: 1: list of blocked types, 2: optional danger notice */
-                        __( 'AIOSEO + Custom is intended for additive types (FAQPage, HowTo, Service…). Structural types detected: %1$s.%2$s Use "Override selected types" mode instead.', 'schema-control-manager' ),
+                        __( 'AIOSEO + personalizado está pensado para tipos aditivos (FAQPage, HowTo, Service…). Se detectaron tipos estructurales: %1$s.%2$s Usa el modo "Reemplazar tipos seleccionados" en su lugar.', 'schema-control-manager' ),
                         implode( ', ', $blocked_types ),
                         $danger_notice
                     )
@@ -167,10 +167,10 @@ class SCM_Admin {
                     ? $original['replaced_types']
                     : ( json_decode( $original['replaced_types'], true ) ?: array() );
 
-                $base_label = preg_replace( '/ \(Copy\)$/', '', $original['label'] );
+                $base_label = preg_replace( '/ \(Copia\)$/', '', $original['label'] );
 
                 $new_rule_id = $this->rules->create( array(
-                    'label'          => $base_label . ' (Copy)',
+                    'label'          => $base_label . ' (Copia)',
                     'target_type'    => $original['target_type'],
                     'target_value'   => $original['target_value'],
                     'mode'           => $original['mode'],
@@ -230,7 +230,7 @@ class SCM_Admin {
                 'warn_on_structural_without_id' => ! empty( $_POST['warn_on_structural_without_id'] ) ? 1 : 0,
                 'enable_graph_diagnostics'      => ! empty( $_POST['enable_graph_diagnostics'] ) ? 1 : 0,
                 'conflict_types_default'        => array_values( array_filter( array_map( 'trim', explode( ',', wp_unslash( $_POST['conflict_types_default'] ?? '' ) ) ) ) ),
-                'preview_language'              => in_array( wp_unslash( $_POST['preview_language'] ?? '' ), array( 'en', 'es' ), true ) ? wp_unslash( $_POST['preview_language'] ) : 'en',
+                'preview_language'              => in_array( wp_unslash( $_POST['preview_language'] ?? '' ), array( 'en', 'es' ), true ) ? wp_unslash( $_POST['preview_language'] ) : 'es',
                 'delete_data_on_uninstall'      => ! empty( $_POST['delete_data_on_uninstall'] ) ? 1 : 0,
             );
             update_option( 'scm_settings', $settings );
@@ -285,7 +285,7 @@ class SCM_Admin {
 
         if ( ! current_user_can( 'manage_options' ) ) {
             ob_end_clean();
-            wp_send_json_error( array( 'message' => __( 'You do not have permission to perform this action.', 'schema-control-manager' ) ), 403 );
+            wp_send_json_error( array( 'message' => __( 'No tienes permiso para realizar esta acción.', 'schema-control-manager' ) ), 403 );
         }
 
         $rule_id = isset( $_POST['rule_id'] ) ? (int) $_POST['rule_id'] : 0;
@@ -293,19 +293,19 @@ class SCM_Admin {
 
         if ( $rule_id < 1 ) {
             ob_end_clean();
-            wp_send_json_error( array( 'message' => __( 'Invalid rule ID.', 'schema-control-manager' ) ) );
+            wp_send_json_error( array( 'message' => __( 'ID de regla inválido.', 'schema-control-manager' ) ) );
         }
 
         if ( $post_id < 1 ) {
             ob_end_clean();
-            wp_send_json_error( array( 'message' => __( 'Invalid post ID.', 'schema-control-manager' ) ) );
+            wp_send_json_error( array( 'message' => __( 'ID de entrada inválido.', 'schema-control-manager' ) ) );
         }
 
         if ( ! get_post( $post_id ) ) {
             ob_end_clean();
             wp_send_json_error( array( 'message' => sprintf(
                 /* translators: %d: post ID */
-                __( 'Post #%d was not found.', 'schema-control-manager' ),
+                __( 'La entrada #%d no fue encontrada.', 'schema-control-manager' ),
                 $post_id
             ) ) );
         }
@@ -315,7 +315,7 @@ class SCM_Admin {
             ob_end_clean();
             wp_send_json_error( array( 'message' => sprintf(
                 /* translators: %d: rule ID */
-                __( 'Rule #%d was not found.', 'schema-control-manager' ),
+                __( 'La regla #%d no fue encontrada.', 'schema-control-manager' ),
                 $rule_id
             ) ) );
         }
@@ -334,7 +334,7 @@ class SCM_Admin {
 
         if ( false === $json ) {
             ob_end_clean();
-            wp_send_json_error( array( 'message' => __( 'Failed to encode schema output as JSON.', 'schema-control-manager' ) ) );
+            wp_send_json_error( array( 'message' => __( 'Error al codificar la salida del schema como JSON.', 'schema-control-manager' ) ) );
         }
 
         ob_end_clean();
@@ -478,7 +478,7 @@ class SCM_Admin {
                 case 'post_type_archive':
                     $pt            = sanitize_key( $target_value ) ?: 'post';
                     $preview_posts = get_posts( array_merge( $base_args, array( 'post_type' => $pt ) ) );
-                    $preview_context_notice = __( 'This rule targets a CPT archive page. The preview simulates a singular post context — useful for template resolution, but the rule fires on the archive page, not on individual posts.', 'schema-control-manager' );
+                    $preview_context_notice = __( 'Esta regla apunta a un archivo de CPT. La vista previa simula un contexto de entrada singular — útil para la resolución de plantillas, pero la regla se activa en la página de archivo, no en entradas individuales.', 'schema-control-manager' );
                     foreach ( $preview_posts as $p ) {
                         $preview_posts_match_map[ $p->ID ] = false;
                     }
@@ -494,14 +494,14 @@ class SCM_Admin {
                         $preview_posts = get_posts( array_merge( $base_args, array( 'post_type' => 'any' ) ) );
                         $preview_context_notice = sprintf(
                             /* translators: %s: category slug */
-                            __( 'No posts found in category "%s". Showing all posts.', 'schema-control-manager' ),
+                            __( 'No se encontraron entradas en la categoría "%s". Mostrando todas las entradas.', 'schema-control-manager' ),
                             $slug
                         );
                         foreach ( $preview_posts as $p ) {
                             $preview_posts_match_map[ $p->ID ] = false;
                         }
                     } else {
-                        $preview_context_notice = __( 'This rule targets a category archive. The preview simulates a singular post context.', 'schema-control-manager' );
+                        $preview_context_notice = __( 'Esta regla apunta a un archivo de categoría. La vista previa simula un contexto de entrada singular.', 'schema-control-manager' );
                         foreach ( $preview_posts as $p ) {
                             $preview_posts_match_map[ $p->ID ] = true;
                         }
@@ -518,14 +518,14 @@ class SCM_Admin {
                         $preview_posts = get_posts( array_merge( $base_args, array( 'post_type' => 'any' ) ) );
                         $preview_context_notice = sprintf(
                             /* translators: %s: tag slug */
-                            __( 'No posts found with tag "%s". Showing all posts.', 'schema-control-manager' ),
+                            __( 'No se encontraron entradas con la etiqueta "%s". Mostrando todas las entradas.', 'schema-control-manager' ),
                             $slug
                         );
                         foreach ( $preview_posts as $p ) {
                             $preview_posts_match_map[ $p->ID ] = false;
                         }
                     } else {
-                        $preview_context_notice = __( 'This rule targets a tag archive. The preview simulates a singular post context.', 'schema-control-manager' );
+                        $preview_context_notice = __( 'Esta regla apunta a un archivo de etiqueta. La vista previa simula un contexto de entrada singular.', 'schema-control-manager' );
                         foreach ( $preview_posts as $p ) {
                             $preview_posts_match_map[ $p->ID ] = true;
                         }
@@ -541,14 +541,14 @@ class SCM_Admin {
                             'post_type' => 'any',
                             'tax_query' => array( array( 'taxonomy' => $taxonomy, 'field' => 'slug', 'terms' => $term_slug ) ),
                         ) ) );
-                        $preview_context_notice = __( 'This rule targets a taxonomy term archive. The preview simulates a singular post context.', 'schema-control-manager' );
+                        $preview_context_notice = __( 'Esta regla apunta a un archivo de término de taxonomía. La vista previa simula un contexto de entrada singular.', 'schema-control-manager' );
                     }
                     if ( empty( $preview_posts ) ) {
                         $preview_posts = get_posts( array_merge( $base_args, array( 'post_type' => 'any' ) ) );
                         if ( $taxonomy && $term_slug ) {
                             $preview_context_notice = sprintf(
                                 /* translators: 1: taxonomy, 2: term slug */
-                                __( 'No posts found for %1$s:%2$s. Showing all posts.', 'schema-control-manager' ),
+                                __( 'No se encontraron entradas para %1$s:%2$s. Mostrando todas las entradas.', 'schema-control-manager' ),
                                 $taxonomy,
                                 $term_slug
                             );
@@ -580,7 +580,7 @@ class SCM_Admin {
                         $preview_posts = get_posts( array_merge( $base_args, array( 'post_type' => 'any' ) ) );
                         $preview_context_notice = sprintf(
                             /* translators: %s: slug */
-                            __( 'No published post found with slug "%s". Showing all posts.', 'schema-control-manager' ),
+                            __( 'No se encontró ninguna entrada publicada con el slug "%s". Mostrando todas las entradas.', 'schema-control-manager' ),
                             $slug
                         );
                         foreach ( $preview_posts as $p ) {
@@ -619,7 +619,7 @@ class SCM_Admin {
                         }
                     }
                     $preview_posts = get_posts( array_merge( $base_args, array( 'post_type' => 'any' ) ) );
-                    $preview_context_notice = __( 'Could not resolve the target URL to a published post. Showing all posts.', 'schema-control-manager' );
+                    $preview_context_notice = __( 'No se pudo resolver la URL objetivo en una entrada publicada. Mostrando todas las entradas.', 'schema-control-manager' );
                     foreach ( $preview_posts as $p ) {
                         $preview_posts_match_map[ $p->ID ] = false;
                     }
@@ -632,14 +632,14 @@ class SCM_Admin {
                             'post_type' => 'any',
                             'author'    => $author->ID,
                         ) ) );
-                        $preview_context_notice = __( 'This rule targets an author archive. The preview simulates a singular post context.', 'schema-control-manager' );
+                        $preview_context_notice = __( 'Esta regla apunta a un archivo de autor. La vista previa simula un contexto de entrada singular.', 'schema-control-manager' );
                     }
                     if ( empty( $preview_posts ) ) {
                         $preview_posts = get_posts( array_merge( $base_args, array( 'post_type' => 'any' ) ) );
                         if ( $target_value ) {
                             $preview_context_notice = sprintf(
                                 /* translators: %s: author slug */
-                                __( 'No posts found for author "%s". Showing all posts.', 'schema-control-manager' ),
+                                __( 'No se encontraron entradas para el autor "%s". Mostrando todas las entradas.', 'schema-control-manager' ),
                                 $target_value
                             );
                         }
@@ -656,7 +656,7 @@ class SCM_Admin {
 
                 case 'home':
                 case 'front_page':
-                    $preview_context_notice = __( 'This rule targets the home/front page. The preview uses a singular post context — results are an approximation only.', 'schema-control-manager' );
+                    $preview_context_notice = __( 'Esta regla apunta a la portada o página de inicio. La vista previa usa un contexto de entrada singular — los resultados son una aproximación.', 'schema-control-manager' );
                     $preview_posts = get_posts( array_merge( $base_args, array( 'post_type' => 'any' ) ) );
                     foreach ( $preview_posts as $p ) {
                         $preview_posts_match_map[ $p->ID ] = false;
@@ -716,7 +716,7 @@ class SCM_Admin {
         if ( $rule_id <= 0 ) {
             return new WP_Error(
                 'missing_rule_id',
-                __( 'No rule context provided. A schema must be saved under a specific rule.', 'schema-control-manager' )
+                __( 'No se proporcionó contexto de regla. Un schema debe guardarse bajo una regla específica.', 'schema-control-manager' )
             );
         }
 
@@ -725,7 +725,7 @@ class SCM_Admin {
                 'rule_not_found',
                 sprintf(
                     /* translators: %d: rule ID */
-                    __( 'Rule #%d does not exist. The schema cannot be saved.', 'schema-control-manager' ),
+                    __( 'La regla #%d no existe. El schema no puede guardarse.', 'schema-control-manager' ),
                     $rule_id
                 )
             );
@@ -737,7 +737,7 @@ class SCM_Admin {
                     'schema_not_found',
                     sprintf(
                         /* translators: %d: schema ID */
-                        __( 'Schema #%d does not exist. It may have been deleted.', 'schema-control-manager' ),
+                        __( 'El schema #%d no existe. Es posible que haya sido eliminado.', 'schema-control-manager' ),
                         $schema_id
                     )
                 );
@@ -748,7 +748,7 @@ class SCM_Admin {
                     'schema_rule_mismatch',
                     sprintf(
                         /* translators: 1: schema ID, 2: actual rule ID, 3: expected rule ID */
-                        __( 'Schema #%1$d belongs to Rule #%2$d, not Rule #%3$d. Saving is blocked to prevent data corruption.', 'schema-control-manager' ),
+                        __( 'El schema #%1$d pertenece a la regla #%2$d, no a la regla #%3$d. El guardado está bloqueado para prevenir corrupción de datos.', 'schema-control-manager' ),
                         $schema_id,
                         (int) $existing_schema['rule_id'],
                         $rule_id
@@ -760,7 +760,7 @@ class SCM_Admin {
         if ( '' === trim( $schema_json ) ) {
             return new WP_Error(
                 'empty_schema_json',
-                __( 'The schema JSON payload is empty. Nothing was saved.', 'schema-control-manager' )
+                __( 'El payload JSON del schema está vacío. No se guardó nada.', 'schema-control-manager' )
             );
         }
 
@@ -780,15 +780,15 @@ class SCM_Admin {
     private function build_rule_summary( $rule, $schemas ) {
         $mode          = $rule['mode'];
         $aioseo_status = 'aioseo_only' === $mode
-            ? __( 'Active only', 'schema-control-manager' )
-            : ( 'custom_only' === $mode ? __( 'Disabled', 'schema-control-manager' ) : __( 'Active', 'schema-control-manager' ) );
+            ? __( 'Solo activo', 'schema-control-manager' )
+            : ( 'custom_only' === $mode ? __( 'Desactivado', 'schema-control-manager' ) : __( 'Activo', 'schema-control-manager' ) );
         $output        = 'aioseo_only' === $mode
-            ? __( 'Only AIOSEO output', 'schema-control-manager' )
+            ? __( 'Solo salida AIOSEO', 'schema-control-manager' )
             : ( 'custom_only' === $mode
-                ? __( 'Only custom output', 'schema-control-manager' )
+                ? __( 'Solo salida personalizada', 'schema-control-manager' )
                 : ( 'custom_override_selected' === $mode
-                    ? __( 'AIOSEO filtered + custom', 'schema-control-manager' )
-                    : __( 'AIOSEO + custom merge', 'schema-control-manager' )
+                    ? __( 'AIOSEO filtrado + personalizado', 'schema-control-manager' )
+                    : __( 'Combinación AIOSEO + personalizado', 'schema-control-manager' )
                 )
             );
 

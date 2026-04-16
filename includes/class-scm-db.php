@@ -79,7 +79,7 @@ class SCM_DB {
             'auto_wrap_graph'               => 1,
             'warn_on_structural_without_id' => 1,
             'enable_graph_diagnostics'      => 1,
-            'preview_language'              => 'en',
+            'preview_language'              => 'es',
             'delete_data_on_uninstall'      => 0,
         );
 
